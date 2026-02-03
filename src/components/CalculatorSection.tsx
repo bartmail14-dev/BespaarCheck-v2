@@ -27,14 +27,14 @@ const businessRanges: Record<string, {
   electricity: { min: number; max: number; default: number; step: number };
   gas: { min: number; max: number; default: number; step: number };
 }> = {
-  '': { buildingSize: { min: 50, max: 5000, default: 500, step: 50 }, electricity: { min: 5000, max: 500000, default: 50000, step: 5000 }, gas: { min: 0, max: 100000, default: 15000, step: 1000 } },
-  retail: { buildingSize: { min: 50, max: 2000, default: 250, step: 25 }, electricity: { min: 5000, max: 150000, default: 35000, step: 2500 }, gas: { min: 0, max: 30000, default: 8000, step: 500 } },
-  office: { buildingSize: { min: 100, max: 5000, default: 500, step: 50 }, electricity: { min: 10000, max: 300000, default: 60000, step: 5000 }, gas: { min: 0, max: 50000, default: 12000, step: 1000 } },
-  warehouse: { buildingSize: { min: 500, max: 25000, default: 3000, step: 250 }, electricity: { min: 25000, max: 750000, default: 150000, step: 10000 }, gas: { min: 0, max: 150000, default: 40000, step: 2500 } },
-  production: { buildingSize: { min: 1000, max: 50000, default: 5000, step: 500 }, electricity: { min: 100000, max: 2000000, default: 500000, step: 25000 }, gas: { min: 10000, max: 500000, default: 100000, step: 5000 } },
-  hospitality: { buildingSize: { min: 50, max: 1500, default: 200, step: 25 }, electricity: { min: 10000, max: 200000, default: 45000, step: 2500 }, gas: { min: 5000, max: 75000, default: 20000, step: 1000 } },
-  healthcare: { buildingSize: { min: 200, max: 15000, default: 1500, step: 100 }, electricity: { min: 50000, max: 1000000, default: 200000, step: 10000 }, gas: { min: 10000, max: 200000, default: 50000, step: 2500 } },
-  other: { buildingSize: { min: 50, max: 10000, default: 500, step: 50 }, electricity: { min: 5000, max: 500000, default: 50000, step: 5000 }, gas: { min: 0, max: 100000, default: 15000, step: 1000 } },
+  '': { buildingSize: { min: 50, max: 5000, default: 500, step: 50 }, electricity: { min: 2500, max: 500000, default: 25000, step: 2500 }, gas: { min: 0, max: 100000, default: 10000, step: 500 } },
+  retail: { buildingSize: { min: 25, max: 2000, default: 150, step: 25 }, electricity: { min: 2500, max: 150000, default: 15000, step: 2500 }, gas: { min: 0, max: 30000, default: 5000, step: 500 } },
+  office: { buildingSize: { min: 50, max: 5000, default: 300, step: 50 }, electricity: { min: 2500, max: 300000, default: 25000, step: 2500 }, gas: { min: 0, max: 50000, default: 8000, step: 500 } },
+  warehouse: { buildingSize: { min: 200, max: 25000, default: 2000, step: 100 }, electricity: { min: 5000, max: 750000, default: 75000, step: 5000 }, gas: { min: 0, max: 150000, default: 20000, step: 1000 } },
+  production: { buildingSize: { min: 500, max: 50000, default: 3000, step: 250 }, electricity: { min: 25000, max: 2000000, default: 250000, step: 10000 }, gas: { min: 5000, max: 500000, default: 50000, step: 2500 } },
+  hospitality: { buildingSize: { min: 50, max: 1500, default: 150, step: 25 }, electricity: { min: 5000, max: 200000, default: 30000, step: 2500 }, gas: { min: 2500, max: 75000, default: 15000, step: 500 } },
+  healthcare: { buildingSize: { min: 100, max: 15000, default: 1000, step: 100 }, electricity: { min: 25000, max: 1000000, default: 100000, step: 5000 }, gas: { min: 5000, max: 200000, default: 30000, step: 1000 } },
+  other: { buildingSize: { min: 25, max: 10000, default: 300, step: 25 }, electricity: { min: 2500, max: 500000, default: 25000, step: 2500 }, gas: { min: 0, max: 100000, default: 10000, step: 500 } },
 };
 
 interface CalculationResult {
