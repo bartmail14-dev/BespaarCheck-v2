@@ -37,11 +37,105 @@ const businessRanges: Record<string, {
   other: { buildingSize: { min: 25, max: 10000, default: 300, step: 25 }, electricity: { min: 2500, max: 500000, default: 25000, step: 2500 }, gas: { min: 0, max: 100000, default: 10000, step: 500 } },
 };
 
+// Nederlandse energieprijzen (2024/2025 gemiddelden)
+const ENERGY_PRICES = {
+  electricity: 0.28, // €/kWh (zakelijk tarief)
+  gas: 1.25, // €/m³
+  feedInTariff: 0.07, // €/kWh terugleververgoeding (sterk gedaald)
+};
+
+// CO2 emissiefactoren
+const CO2_FACTORS = {
+  electricity: 0.4, // kg CO2/kWh (NL grid mix)
+  gas: 1.8, // kg CO2/m³
+};
+
+// Sector-specifieke energieprofielen (% van totaal elektriciteitsverbruik)
+const SECTOR_PROFILES: Record<string, {
+  lighting: number;
+  cooling: number;
+  heating: number;
+  equipment: number;
+  peakLoadFactor: number; // Hoe goed ze kunnen profiteren van dynamische prijzen
+}> = {
+  retail: { lighting: 0.35, cooling: 0.20, heating: 0.15, equipment: 0.30, peakLoadFactor: 0.6 },
+  office: { lighting: 0.30, cooling: 0.25, heating: 0.20, equipment: 0.25, peakLoadFactor: 0.4 },
+  warehouse: { lighting: 0.40, cooling: 0.10, heating: 0.25, equipment: 0.25, peakLoadFactor: 0.7 },
+  production: { lighting: 0.15, cooling: 0.15, heating: 0.20, equipment: 0.50, peakLoadFactor: 0.5 },
+  hospitality: { lighting: 0.25, cooling: 0.30, heating: 0.25, equipment: 0.20, peakLoadFactor: 0.3 },
+  healthcare: { lighting: 0.20, cooling: 0.25, heating: 0.30, equipment: 0.25, peakLoadFactor: 0.2 },
+  other: { lighting: 0.25, cooling: 0.20, heating: 0.25, equipment: 0.30, peakLoadFactor: 0.5 },
+};
+
+// Besparingsmaatregelen met realistische percentages en kosten
+const SAVINGS_MEASURES = {
+  led: {
+    name: 'LED-verlichting',
+    savingsPercent: 0.60, // 60% besparing op verlichting
+    investmentPerM2: 12, // €/m²
+    lifespan: 15,
+  },
+  solar: {
+    name: 'Zonnepanelen',
+    kWhPerKwp: 900, // kWh opbrengst per kWp per jaar in NL
+    costPerKwp: 1000, // € per kWp geïnstalleerd
+    roofFactorPerM2: 0.15, // kWp per m² dakoppervlak (≈ 60% van vloeroppervlak bruikbaar)
+    lifespan: 25,
+  },
+  heatpump: {
+    name: 'Warmtepomp',
+    cop: 4, // Coefficient of Performance
+    gasSavingsPercent: 0.85, // Vervangt 85% van gasverbruik
+    electricityIncrease: 0.25, // Maar verhoogt elektriciteit
+    baseCost: 15000,
+    costPerM2: 30,
+    lifespan: 20,
+  },
+  ems: {
+    name: 'Energiemanagementsysteem',
+    savingsPercent: 0.12, // 12% totale besparing
+    baseCost: 3000,
+    costPerM2: 5,
+    lifespan: 10,
+  },
+  insulation: {
+    name: 'Isolatie verbetering',
+    heatingSavingsPercent: 0.30,
+    costPerM2: 45,
+    lifespan: 30,
+  },
+  smartThermostat: {
+    name: 'Slimme thermostaat',
+    heatingSavingsPercent: 0.12,
+    baseCost: 500,
+    lifespan: 10,
+  },
+  dynamicContract: {
+    name: 'Dynamisch energiecontract',
+    savingsPercent: 0.15, // Basis 15%, aangepast op sector
+  },
+};
+
+interface Recommendation {
+  name: string;
+  yearlySavings: number;
+  investment: number;
+  paybackYears: number;
+  co2Reduction: number;
+  priority: 'high' | 'medium' | 'low';
+}
+
 interface CalculationResult {
+  currentCosts: {
+    electricity: number;
+    gas: number;
+    total: number;
+  };
   yearlySavings: number;
   co2Reduction: number;
   paybackPeriod: number;
-  recommendations: string[];
+  recommendations: Recommendation[];
+  totalInvestment: number;
 }
 
 export function CalculatorSection() {
@@ -103,18 +197,161 @@ export function CalculatorSection() {
   }, [isCalculating]);
 
   const calculateResults = useCallback((): CalculationResult => {
-    const baseSavings = formData.electricityUsage * 0.15 + formData.gasUsage * 0.12;
-    const sizeFactor = formData.buildingSize / 500;
-    const contractFactor = formData.contractType === 'dynamic' ? 1.2 : formData.contractType === 'variable' ? 1.1 : 1;
-    const yearlySavings = Math.round(baseSavings * sizeFactor * contractFactor);
-    const co2Reduction = Math.round((formData.electricityUsage * 0.4 + formData.gasUsage * 1.8) * sizeFactor / 100) / 10;
-    const recommendations: string[] = [];
-    if (formData.priorities.includes('cost')) recommendations.push('LED-verlichting installatie');
-    if (formData.priorities.includes('sustainability')) recommendations.push('Zonnepanelen overwegen');
-    if (formData.priorities.includes('independence')) recommendations.push('Batterijopslag systeem');
-    if (formData.priorities.includes('comfort')) recommendations.push('Smart thermostaat');
-    if (recommendations.length === 0) recommendations.push('Energie-audit uitvoeren');
-    return { yearlySavings, co2Reduction, paybackPeriod: Math.round(yearlySavings / 1000) / 2 + 1, recommendations };
+    const profile = SECTOR_PROFILES[formData.businessType] || SECTOR_PROFILES.other;
+
+    // Huidige energiekosten berekenen
+    const currentCosts = {
+      electricity: formData.electricityUsage * ENERGY_PRICES.electricity,
+      gas: formData.gasUsage * ENERGY_PRICES.gas,
+      total: 0,
+    };
+    currentCosts.total = currentCosts.electricity + currentCosts.gas;
+
+    // Huidige CO2 uitstoot
+    const currentCO2 = (formData.electricityUsage * CO2_FACTORS.electricity + formData.gasUsage * CO2_FACTORS.gas) / 1000; // ton
+
+    const recommendations: Recommendation[] = [];
+    const hasInstallation = (id: string) => formData.existingInstallations.includes(id);
+
+    // 1. LED-verlichting (als ze het nog niet hebben)
+    if (!hasInstallation('led')) {
+      const lightingUsage = formData.electricityUsage * profile.lighting;
+      const savingsKwh = lightingUsage * SAVINGS_MEASURES.led.savingsPercent;
+      const yearlySavings = savingsKwh * ENERGY_PRICES.electricity;
+      const investment = formData.buildingSize * SAVINGS_MEASURES.led.investmentPerM2;
+      const co2Reduction = savingsKwh * CO2_FACTORS.electricity / 1000;
+
+      if (yearlySavings > 200) {
+        recommendations.push({
+          name: 'LED-verlichting',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: yearlySavings > 1000 ? 'high' : 'medium',
+        });
+      }
+    }
+
+    // 2. Zonnepanelen (als ze het nog niet hebben)
+    if (!hasInstallation('solar')) {
+      // Schat dakoppervlak: ~60% van vloeroppervlak bruikbaar
+      const roofArea = formData.buildingSize * 0.6;
+      const possibleKwp = roofArea * SAVINGS_MEASURES.solar.roofFactorPerM2;
+      const maxKwp = Math.min(possibleKwp, formData.electricityUsage / SAVINGS_MEASURES.solar.kWhPerKwp); // Niet meer dan je verbruikt
+      const solarProduction = maxKwp * SAVINGS_MEASURES.solar.kWhPerKwp;
+
+      // Eigen verbruik vs teruglevering (schatting: 70% eigen verbruik voor bedrijven)
+      const eigenVerbruik = solarProduction * 0.7;
+      const teruglevering = solarProduction * 0.3;
+
+      const yearlySavings = eigenVerbruik * ENERGY_PRICES.electricity + teruglevering * ENERGY_PRICES.feedInTariff;
+      const investment = maxKwp * SAVINGS_MEASURES.solar.costPerKwp;
+      const co2Reduction = solarProduction * CO2_FACTORS.electricity / 1000;
+
+      if (maxKwp > 5 && yearlySavings > 500) {
+        recommendations.push({
+          name: `Zonnepanelen (${Math.round(maxKwp)} kWp)`,
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: 'high',
+        });
+      }
+    }
+
+    // 3. Warmtepomp (als ze gas gebruiken en nog geen warmtepomp hebben)
+    if (!hasInstallation('heatpump') && formData.gasUsage > 2000) {
+      const gasForHeating = formData.gasUsage * 0.85; // 85% van gas is voor verwarming
+      const gasSavings = gasForHeating * SAVINGS_MEASURES.heatpump.gasSavingsPercent;
+      const extraElectricity = (gasSavings * 9.77) / SAVINGS_MEASURES.heatpump.cop; // 9.77 kWh/m³ gas equivalent
+
+      const yearlySavings = (gasSavings * ENERGY_PRICES.gas) - (extraElectricity * ENERGY_PRICES.electricity);
+      const investment = SAVINGS_MEASURES.heatpump.baseCost + (formData.buildingSize * SAVINGS_MEASURES.heatpump.costPerM2);
+      const co2Reduction = (gasSavings * CO2_FACTORS.gas - extraElectricity * CO2_FACTORS.electricity) / 1000;
+
+      if (yearlySavings > 500) {
+        recommendations.push({
+          name: 'Warmtepomp',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: co2Reduction > 5 ? 'high' : 'medium',
+        });
+      }
+    }
+
+    // 4. Energiemanagementsysteem (als ze het nog niet hebben)
+    if (!hasInstallation('ems') && currentCosts.total > 10000) {
+      const yearlySavings = currentCosts.total * SAVINGS_MEASURES.ems.savingsPercent;
+      const investment = SAVINGS_MEASURES.ems.baseCost + (formData.buildingSize * SAVINGS_MEASURES.ems.costPerM2);
+      const co2Reduction = currentCO2 * SAVINGS_MEASURES.ems.savingsPercent;
+
+      recommendations.push({
+        name: 'Energiemanagementsysteem (EMS)',
+        yearlySavings: Math.round(yearlySavings),
+        investment: Math.round(investment),
+        paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+        co2Reduction: Math.round(co2Reduction * 10) / 10,
+        priority: currentCosts.total > 25000 ? 'high' : 'medium',
+      });
+    }
+
+    // 5. Slimme thermostaat (als ze gas gebruiken)
+    if (formData.gasUsage > 1000 && !hasInstallation('heatpump')) {
+      const heatingCosts = formData.gasUsage * ENERGY_PRICES.gas * 0.85;
+      const yearlySavings = heatingCosts * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
+      const investment = SAVINGS_MEASURES.smartThermostat.baseCost;
+      const co2Reduction = (formData.gasUsage * 0.85 * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent * CO2_FACTORS.gas) / 1000;
+
+      if (yearlySavings > 100) {
+        recommendations.push({
+          name: 'Slimme thermostaat',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: 'low',
+        });
+      }
+    }
+
+    // 6. Dynamisch contract (als ze dat nog niet hebben)
+    if (formData.contractType !== 'dynamic') {
+      const potentialSavings = currentCosts.electricity * SAVINGS_MEASURES.dynamicContract.savingsPercent * profile.peakLoadFactor;
+
+      if (potentialSavings > 200) {
+        recommendations.push({
+          name: 'Overstappen naar dynamisch contract',
+          yearlySavings: Math.round(potentialSavings),
+          investment: 0,
+          paybackYears: 0,
+          co2Reduction: 0, // Indirect effect
+          priority: potentialSavings > 1000 ? 'high' : 'medium',
+        });
+      }
+    }
+
+    // Sorteer op jaarlijkse besparing (hoogste eerst)
+    recommendations.sort((a, b) => b.yearlySavings - a.yearlySavings);
+
+    // Bereken totalen (top 5 maatregelen)
+    const topRecommendations = recommendations.slice(0, 5);
+    const totalYearlySavings = topRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
+    const totalInvestment = topRecommendations.reduce((sum, r) => sum + r.investment, 0);
+    const totalCO2Reduction = topRecommendations.reduce((sum, r) => sum + r.co2Reduction, 0);
+    const avgPayback = totalInvestment > 0 ? totalInvestment / totalYearlySavings : 0;
+
+    return {
+      currentCosts,
+      yearlySavings: totalYearlySavings,
+      co2Reduction: Math.round(totalCO2Reduction * 10) / 10,
+      paybackPeriod: Math.round(avgPayback * 10) / 10,
+      recommendations: topRecommendations,
+      totalInvestment,
+    };
   }, [formData]);
 
   const handleNext = () => {
@@ -324,59 +561,98 @@ export function CalculatorSection() {
                 {showResults && results && !isCalculating && (
                   <div className="animate-fade-in">
                     {/* Success header */}
-                    <div className="text-center mb-8">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500 mb-4">
-                        <CheckCircle className="w-8 h-8 text-white" />
+                    <div className="text-center mb-6">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 mb-3">
+                        <CheckCircle className="w-7 h-7 text-white" />
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Analyse Compleet!</h3>
-                      <p className="text-gray-500">Ontdek uw persoonlijke besparingspotentieel</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Uw Besparingsanalyse</h3>
+                      <p className="text-gray-500 text-sm">Gebaseerd op actuele energieprijzen en uw bedrijfsprofiel</p>
+                    </div>
+
+                    {/* Current costs context */}
+                    <div className="p-4 rounded-xl bg-gray-100 border border-gray-200 mb-6">
+                      <p className="text-gray-600 text-sm text-center">
+                        Uw geschatte huidige energiekosten: <span className="font-bold text-gray-900">€{results.currentCosts.total.toLocaleString()}</span>/jaar
+                        <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} elektra + €{results.currentCosts.gas.toLocaleString()} gas)</span>
+                      </p>
                     </div>
 
                     {/* Stats grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                       {[
-                        { label: 'Jaarlijkse besparing', value: `€${results.yearlySavings.toLocaleString()}`, icon: Euro, color: '#0891b2', bg: 'bg-cyan-50', border: 'border-cyan-100' },
-                        { label: 'CO₂ reductie', value: `${results.co2Reduction * 10} ton`, icon: Leaf, color: '#10b981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-                        { label: 'Terugverdientijd', value: `${results.paybackPeriod} jaar`, icon: TrendingDown, color: '#8b5cf6', bg: 'bg-violet-50', border: 'border-violet-100' },
+                        { label: 'Potentiële besparing', value: `€${results.yearlySavings.toLocaleString()}`, sub: '/jaar', icon: Euro, color: '#0891b2', bg: 'bg-cyan-50', border: 'border-cyan-100' },
+                        { label: 'CO₂ reductie', value: `${results.co2Reduction}`, sub: ' ton/jaar', icon: Leaf, color: '#10b981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+                        { label: 'Gem. terugverdientijd', value: `${results.paybackPeriod}`, sub: ' jaar', icon: TrendingDown, color: '#8b5cf6', bg: 'bg-violet-50', border: 'border-violet-100' },
                       ].map((stat, i) => (
                         <div
                           key={i}
-                          className={`p-6 rounded-xl ${stat.bg} border ${stat.border}`}
+                          className={`p-4 rounded-xl ${stat.bg} border ${stat.border}`}
                         >
-                          <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                            style={{ backgroundColor: stat.color }}
-                          >
-                            <stat.icon className="w-5 h-5 text-white" />
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: stat.color }}
+                            >
+                              <stat.icon className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">{stat.label}</p>
+                              <p className="text-2xl font-bold" style={{ color: stat.color }}>
+                                {stat.value}<span className="text-sm font-normal text-gray-500">{stat.sub}</span>
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-gray-500 text-sm mb-1">{stat.label}</p>
-                          <p
-                            className="text-3xl font-bold"
-                            style={{ color: stat.color }}
-                          >
-                            {stat.value}
-                          </p>
                         </div>
                       ))}
                     </div>
 
-                    {/* Recommendations */}
-                    <div className="p-6 rounded-xl bg-emerald-50 border border-emerald-100 mb-8">
-                      <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    {/* Detailed Recommendations */}
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-emerald-500" />
                         Aanbevolen maatregelen
                       </h4>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="space-y-2">
                         {results.recommendations.map((rec, i) => (
                           <div
                             key={i}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-emerald-200"
+                            className="p-4 rounded-xl bg-white border border-gray-200 hover:border-gray-300 transition-all"
                           >
-                            <CheckCircle className="w-4 h-4 text-emerald-500" />
-                            <span className="text-gray-700 text-sm font-medium">{rec}</span>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  rec.priority === 'high' ? 'bg-emerald-500' : rec.priority === 'medium' ? 'bg-amber-500' : 'bg-gray-400'
+                                }`}>
+                                  <span className="text-white font-bold text-sm">{i + 1}</span>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-gray-900 truncate">{rec.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {rec.investment > 0 ? `Investering: €${rec.investment.toLocaleString()}` : 'Geen investering nodig'}
+                                    {rec.paybackYears > 0 && ` • Terugverdientijd: ${rec.paybackYears} jaar`}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="font-bold text-emerald-600">€{rec.yearlySavings.toLocaleString()}</p>
+                                <p className="text-xs text-gray-500">/jaar</p>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
+                      {results.totalInvestment > 0 && (
+                        <p className="text-xs text-gray-500 mt-3 text-center">
+                          Totale geschatte investering: €{results.totalInvestment.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Disclaimer */}
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 mb-6">
+                      <p className="text-amber-800 text-xs text-center">
+                        ⚠️ Dit is een indicatieve berekening. Werkelijke besparingen kunnen afwijken en zijn afhankelijk van specifieke omstandigheden.
+                      </p>
                     </div>
 
                     {/* CTA Section */}
