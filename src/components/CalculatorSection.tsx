@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Car, Thermometer, Settings, ChevronDown, ArrowDownUp } from 'lucide-react';
+import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Car, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building } from 'lucide-react';
 
 const baseSteps = [
   { id: 1, label: 'Bedrijf', icon: Building2 },
@@ -8,6 +8,7 @@ const baseSteps = [
   { id: 'solar', label: 'Teruglevering', icon: ArrowDownUp, conditional: true },
   { id: 4, label: 'Contract', icon: Euro },
   { id: 5, label: 'Prioriteiten', icon: Users },
+  { id: 6, label: 'Contact', icon: Mail },
 ];
 
 const businessTypes = [
@@ -58,6 +59,9 @@ export function CalculatorSection() {
     solarFeedIn: 0, // kWh per year fed back to grid
     contractType: '',
     priorities: [] as string[],
+    contactName: '',
+    companyName: '',
+    email: '',
   });
   const [activeDropdown, setActiveDropdown] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
@@ -156,7 +160,7 @@ export function CalculatorSection() {
     setShowResults(false);
     setResults(null);
     setCurrentStep(1);
-    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [] });
+    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '' });
   };
 
   const formatNumber = (num: number) => {
@@ -874,6 +878,93 @@ export function CalculatorSection() {
                       </div>
                     )}
 
+                    {/* Step 6: Contact */}
+                    {currentStep === 6 && (
+                      <div>
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center">
+                            <Mail className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">Ontvang uw rapport</h3>
+                            <p className="text-gray-500 text-sm">Wij sturen de analyse naar uw e-mailadres</p>
+                          </div>
+                        </div>
+
+                        <div className="p-5 rounded-xl bg-teal-50 border border-teal-100 mb-6">
+                          <p className="text-gray-700 text-sm flex items-start gap-3">
+                            <Sparkles className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
+                            <span>
+                              Na het invullen ontvangt u direct een <strong>persoonlijk besparingsrapport</strong> met
+                              concrete aanbevelingen en een indicatie van uw besparingspotentieel.
+                              <span className="text-teal-600 font-medium"> 100% gratis en vrijblijvend.</span>
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="space-y-4">
+                          {/* Name */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Uw naam
+                            </label>
+                            <div className="relative">
+                              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <input
+                                type="text"
+                                value={formData.contactName}
+                                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                                placeholder="Jan Jansen"
+                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all outline-none text-gray-900 placeholder-gray-400"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Company */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Bedrijfsnaam
+                            </label>
+                            <div className="relative">
+                              <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <input
+                                type="text"
+                                value={formData.companyName}
+                                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                placeholder="Uw Bedrijf B.V."
+                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all outline-none text-gray-900 placeholder-gray-400"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Email */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              E-mailadres <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="jan@uwbedrijf.nl"
+                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all outline-none text-gray-900 placeholder-gray-400"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 p-4 rounded-xl bg-gray-100 border border-gray-200">
+                          <p className="text-gray-500 text-xs text-center">
+                            Door op "Bereken besparing" te klikken gaat u akkoord met onze privacyvoorwaarden.
+                            Wij delen uw gegevens nooit met derden.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Navigation */}
                     <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
                       {/* Back Button */}
@@ -895,9 +986,9 @@ export function CalculatorSection() {
                       {/* Next/Analyze Button */}
                       <button
                         onClick={handleNext}
-                        disabled={currentStep === 1 && !formData.businessType}
+                        disabled={(currentStep === 1 && !formData.businessType) || (currentStep === 6 && !formData.email)}
                         className={`flex-1 px-8 py-4 rounded-xl font-semibold text-white transition-all ${
-                          currentStep === 1 && !formData.businessType
+                          (currentStep === 1 && !formData.businessType) || (currentStep === 6 && !formData.email)
                             ? 'bg-gray-300 cursor-not-allowed'
                             : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
                         }`}
