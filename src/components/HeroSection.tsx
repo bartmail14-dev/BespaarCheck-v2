@@ -131,27 +131,26 @@ export function HeroSection() {
         }}
       />
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-30">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-30">
         {/* Main Title - Viewport proportional */}
         <h1
-          className="font-bold italic text-white mb-2 tracking-tight"
+          className="font-bold text-white mb-8 tracking-tight"
           style={{
-            fontSize: 'clamp(2rem, 6vw, 4rem)',
-            lineHeight: 1.1,
+            fontSize: 'clamp(3rem, 12vw, 8rem)',
+            lineHeight: 0.95,
+            textShadow: '0 4px 30px rgba(0, 0, 0, 0.3)',
           }}
         >
-          BespaarCheck voor MKB
+          BespaarCheck
         </h1>
         <h2
-          className="font-bold italic text-white mb-8 tracking-tight"
+          className="font-medium text-white/80 mb-8"
           style={{
-            fontSize: 'clamp(1.75rem, 5vw, 3.5rem)',
-            lineHeight: 1.1,
+            fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+            lineHeight: 1.3,
           }}
         >
-          Ontdek direct uw
-          <br />
-          energiebesparingskansen
+          Voor MKB · Ontdek direct uw energiebesparingskansen
         </h2>
 
         {/* Subtitle */}
