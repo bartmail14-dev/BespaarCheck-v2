@@ -75,7 +75,7 @@ const regulations: RegulationItem[] = [
         'Eventuele alternatieve maatregelen met gelijkwaardig resultaat',
         'Bij meerdere vestigingen: rapportage per vestiging of gebundeld'
       ],
-      deadline: 'Uiterlijk 1 december 2023 voor de eerste rapportage, daarna elke 4 jaar (volgende deadline: 1 december 2027)',
+      deadline: 'Rapportage is verplicht elke 4 jaar. De eerstvolgende deadline is 1 december 2027.',
       penalties: 'Bij niet-rapporteren kan de omgevingsdienst handhavend optreden. Rapportages worden steekproefsgewijs gecontroleerd.',
       links: [
         { label: 'RVO eLoket - Informatieplicht', url: 'https://mijn.rvo.nl/informatieplicht-energiebesparing' },
@@ -130,7 +130,6 @@ const regulations: RegulationItem[] = [
       penalties: 'Boete tot €20.500 bij niet voldoen aan de auditverplichting.',
       exemptions: [
         'Bedrijven met een gecertificeerd ISO 50001 energiemanagementsysteem',
-        'Deelnemers aan MJA3 of MEE-convenant (tot 2024)',
         'MKB-bedrijven (onder de genoemde drempelwaarden)'
       ],
       links: [
@@ -201,7 +200,7 @@ const regulations: RegulationItem[] = [
     question: 'Wat zijn mijn F-gassen verplichtingen (airco/koeling/warmtepomp)?',
     summary: 'Eigenaren van koelinstallaties, airconditioners en warmtepompen met gefluoreerde broeikasgassen (F-gassen) moeten lekcontroles uitvoeren en een logboek bijhouden.',
     details: {
-      applicable: 'De F-gassenverordening (EU 517/2014) is van toepassing op installaties die F-gassen bevatten:',
+      applicable: 'De nieuwe F-gassenverordening (EU 2024/573) is van toepassing op installaties die F-gassen bevatten:',
       requirements: [
         'Installaties ≥5 ton CO2-equivalent: jaarlijkse lekcontrole',
         'Installaties ≥50 ton CO2-equivalent: halfjaarlijkse lekcontrole',
@@ -209,8 +208,8 @@ const regulations: RegulationItem[] = [
         'Logboek bijhouden van alle controles, lekken en onderhoud',
         'Werkzaamheden uitsluitend door F-gassen gecertificeerde technici'
       ],
-      deadline: 'Lekcontroles moeten binnen de voorgeschreven termijnen worden uitgevoerd.',
-      penalties: 'Boetes tot €10.000 voor particulieren en tot €50.000 voor bedrijven bij overtreding.',
+      deadline: 'Lekcontroles moeten binnen de voorgeschreven termijnen worden uitgevoerd. Let op: de nieuwe verordening bevat strengere uitfaseringsregels.',
+      penalties: 'Bij overtreding kunnen bestuurlijke boetes worden opgelegd. Raadpleeg de NVWA voor actuele sancties.',
       exemptions: [
         'Hermetisch gesloten systemen < 10 ton CO2-equivalent (met label)',
         'Systemen met natuurlijke koudemiddelen (CO2, ammoniak, propaan)'
@@ -218,7 +217,7 @@ const regulations: RegulationItem[] = [
       links: [
         { label: 'RVO - F-gassen', url: 'https://www.rvo.nl/onderwerpen/f-gassen' },
         { label: 'STEK - F-gassenregeling', url: 'https://www.sfrk.nl/f-gassenverordening/' },
-        { label: 'EUR-Lex - F-gassen verordening', url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32014R0517' }
+        { label: 'EUR-Lex - F-gassen verordening 2024', url: 'https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32024R0573' }
       ]
     },
     color: '#06b6d4' // cyan
@@ -289,7 +288,7 @@ export function RegulationsSection() {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Wet- en regelgeving
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-400 dark:text-gray-400 max-w-2xl mx-auto">
             Overzicht van de belangrijkste energiegerelateerde verplichtingen voor MKB-bedrijven in Nederland
           </p>
         </div>
@@ -341,7 +340,7 @@ export function RegulationsSection() {
                     <span className="block font-semibold text-gray-900 dark:text-white">
                       {item.question}
                     </span>
-                    <span className="block text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1 line-clamp-1">
+                    <span className="block text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                       {item.summary}
                     </span>
                   </div>
@@ -360,7 +359,7 @@ export function RegulationsSection() {
                   <div className="px-5 pb-6 border-t border-gray-100 dark:border-gray-700">
                     {/* Full summary */}
                     <div className="pt-4 pb-4">
-                      <p className="text-gray-700 dark:text-gray-300 dark:text-gray-300 leading-relaxed">
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                         {item.summary}
                       </p>
                     </div>
@@ -371,10 +370,10 @@ export function RegulationsSection() {
                         <Info className="w-4 h-4" style={{ color: item.color }} />
                         Wanneer van toepassing
                       </h4>
-                      <p className="text-gray-600 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm mb-2">{item.details.applicable}</p>
+                      <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 text-sm mb-2">{item.details.applicable}</p>
                       <ul className="space-y-1.5">
                         {item.details.requirements.map((req, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 dark:text-gray-500">
+                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <span
                               className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2"
                               style={{ backgroundColor: item.color }}
@@ -390,8 +389,8 @@ export function RegulationsSection() {
                       <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300">Deadline:</span>
-                          <span className="text-gray-600 dark:text-gray-400 dark:text-gray-500">{item.details.deadline}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Deadline:</span>
+                          <span className="text-gray-600 dark:text-gray-400">{item.details.deadline}</span>
                         </div>
                       </div>
                     )}
@@ -402,7 +401,7 @@ export function RegulationsSection() {
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-2 text-sm">Uitzonderingen</h4>
                         <ul className="space-y-1">
                           {item.details.exemptions.map((ex, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400">
                               <span className="text-gray-400 dark:text-gray-500">•</span>
                               {ex}
                             </li>
@@ -468,33 +467,33 @@ export function RegulationsSection() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">Energiebesparingsplicht</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">&ge;50.000 kWh of &ge;25.000 m³</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Doorlopend</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">&ge;50.000 kWh of &ge;25.000 m³</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Doorlopend</td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">Informatieplicht</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Idem energiebesparingsplicht</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Elke 4 jaar</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Idem energiebesparingsplicht</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Elke 4 jaar</td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">EED-audit</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">&gt;250 FTE of &gt;€50M omzet</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Elke 4 jaar</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">&gt;250 FTE of &gt;€50M omzet</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Elke 4 jaar</td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">Energielabel C kantoren</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Kantoor &gt;100 m²</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">Sinds 1-1-2023</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Kantoor &gt;100 m²</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">Sinds 1-1-2023</td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">EPBD-keuring</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">CV/airco &gt;70 kW</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">4-5 jaar</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">CV/airco &gt;70 kW</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">4-5 jaar</td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-3 px-2 text-gray-900 dark:text-white">F-gassen lekcontrole</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">&ge;5 ton CO2-eq</td>
-                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 dark:text-gray-500">1-4x per jaar</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">&ge;5 ton CO2-eq</td>
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400">1-4x per jaar</td>
                 </tr>
               </tbody>
             </table>
@@ -530,7 +529,7 @@ export function RegulationsSection() {
 
         {/* Last updated note */}
         <p className="mt-6 text-center text-gray-400 dark:text-gray-500 text-xs">
-          Laatste update: januari 2025. Informatie is met zorg samengesteld maar kan inmiddels gewijzigd zijn.
+          Laatste update: februari 2025. Informatie is met zorg samengesteld maar kan inmiddels gewijzigd zijn.
         </p>
       </div>
     </section>
