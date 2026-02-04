@@ -551,9 +551,9 @@ export function CalculatorSection() {
                 className="absolute inset-0"
                 style={{
                   background: isDark
-                    ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)'
-                    : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                  animation: 'shimmer-line 3s ease-in-out infinite',
+                    ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)'
+                    : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+                  animation: 'shimmer-line 5s ease-in-out infinite',
                 }}
               />
             </div>
