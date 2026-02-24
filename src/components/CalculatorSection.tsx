@@ -499,23 +499,25 @@ export function CalculatorSection() {
           : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
       }}
     >
-      {/* Subtle decorative elements */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30"
-        style={{
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-      <div
-        className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20"
-        style={{
-          background: 'radial-gradient(circle, rgba(13, 148, 136, 0.3) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
+      {/* Subtle decorative elements - contained within section */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20"
+          style={{
+            background: 'radial-gradient(circle, rgba(13, 148, 136, 0.3) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+      </div>
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
@@ -594,7 +596,7 @@ export function CalculatorSection() {
                       </div>
                       <span
                         className={`mt-2 text-xs font-medium transition-all duration-300 ${
-                          isActive ? 'text-emerald-600 dark:text-emerald-400' : isCompleted ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
+                          isActive ? 'text-emerald-600 dark:text-emerald-400 sm:block' : isCompleted ? 'text-emerald-500 dark:text-emerald-400 hidden sm:block' : 'text-gray-500 dark:text-gray-400 hidden sm:block'
                         }`}
                       >
                         {step.label}

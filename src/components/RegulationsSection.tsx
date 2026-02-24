@@ -262,23 +262,25 @@ export function RegulationsSection() {
           : 'linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%)',
       }}
     >
-      {/* Subtle decorative elements */}
-      <div
-        className="absolute top-20 left-0 w-96 h-96 rounded-full opacity-30"
-        style={{
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-      <div
-        className="absolute bottom-20 right-0 w-80 h-80 rounded-full opacity-20"
-        style={{
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
+      {/* Subtle decorative elements - contained within section */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute top-20 left-0 w-96 h-96 rounded-full opacity-30"
+          style={{
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          className="absolute bottom-20 right-0 w-80 h-80 rounded-full opacity-20"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+      </div>
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
@@ -529,7 +531,7 @@ export function RegulationsSection() {
 
         {/* Last updated note */}
         <p className="mt-6 text-center text-gray-400 dark:text-gray-500 text-xs">
-          Laatste update: februari 2025. Informatie is met zorg samengesteld maar kan inmiddels gewijzigd zijn.
+          Laatste update: februari 2026. Informatie is met zorg samengesteld maar kan inmiddels gewijzigd zijn.
         </p>
       </div>
     </section>

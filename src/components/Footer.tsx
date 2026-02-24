@@ -14,7 +14,7 @@ export function Footer() {
           : 'linear-gradient(135deg, #1a365d 0%, #1e3a5f 50%, #0f2744 100%)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
           {/* Left Column - Logo & Description */}
           <div>
@@ -104,7 +104,7 @@ export function Footer() {
         <div className="mt-16 pt-8 border-t border-gray-700/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-gray-400 text-sm">
-              © 2024 BespaarCheck. Alle rechten voorbehouden.
+              © {new Date().getFullYear()} BespaarCheck. Alle rechten voorbehouden.
             </p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
