@@ -322,8 +322,8 @@ export function RegulationsSection() {
                     : 'shadow-md hover:shadow-lg'
                 }`}
                 style={{
-                  ringColor: isExpanded ? `${item.color}40` : 'transparent'
-                }}
+                  '--tw-ring-color': isExpanded ? `${item.color}40` : 'transparent'
+                } as React.CSSProperties}
               >
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : item.id)}

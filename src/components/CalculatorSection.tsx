@@ -230,7 +230,7 @@ export function CalculatorSection() {
   const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [energyPrices, setEnergyPrices] = useState<EnergyPrices>(DEFAULT_PRICES);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [, setIsLoadingPrices] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
