@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Car, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, RefreshCw } from 'lucide-react';
+import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Car, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, RefreshCw, Send, AlertCircle, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 // Energie prijzen interface
@@ -231,6 +231,9 @@ export function CalculatorSection() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [energyPrices, setEnergyPrices] = useState<EnergyPrices>(DEFAULT_PRICES);
   const [, setIsLoadingPrices] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -436,9 +439,96 @@ export function CalculatorSection() {
     };
   }, [formData, energyPrices]);
 
+  const validateContactForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.contactName || formData.contactName.trim().length < 2) {
+      errors.contactName = 'Vul uw naam in (minimaal 2 tekens)';
+    }
+
+    if (!formData.email) {
+      errors.email = 'E-mailadres is verplicht';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Vul een geldig e-mailadres in';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const buildLeadSummary = (): string => {
+    const businessLabel = businessTypes.find(t => t.value === formData.businessType)?.label || formData.businessType;
+    const lines = [
+      `Bedrijfstype: ${businessLabel}`,
+      `Pand: ${formData.buildingSize.toLocaleString()} m²`,
+      `Elektriciteit: ${formData.electricityUsage.toLocaleString()} kWh/jaar`,
+      `Gas: ${formData.gasUsage.toLocaleString()} m³/jaar`,
+      `Contract: ${formData.contractType || 'Niet opgegeven'}`,
+      `Bestaande installaties: ${formData.existingInstallations.length > 0 ? formData.existingInstallations.join(', ') : 'Geen'}`,
+      `Prioriteiten: ${formData.priorities.length > 0 ? formData.priorities.join(', ') : 'Niet opgegeven'}`,
+    ];
+
+    if (results) {
+      lines.push('');
+      lines.push('--- RESULTATEN ---');
+      lines.push(`Huidige kosten: €${results.currentCosts.total.toLocaleString()}/jaar`);
+      lines.push(`Potentiële besparing: €${results.yearlySavings.toLocaleString()}/jaar`);
+      lines.push(`CO₂ reductie: ${results.co2Reduction} ton/jaar`);
+      lines.push(`Gem. terugverdientijd: ${results.paybackPeriod} jaar`);
+      lines.push('');
+      lines.push('Aanbevolen maatregelen:');
+      results.recommendations.forEach((rec, i) => {
+        lines.push(`${i + 1}. ${rec.name} — €${rec.yearlySavings.toLocaleString()}/jaar besparing (investering: €${rec.investment.toLocaleString()}, terugverdientijd: ${rec.paybackYears} jaar)`);
+      });
+    }
+
+    return lines.join('\n');
+  };
+
+  const submitLead = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: import.meta.env.VITE_WEB3FORMS_KEY || '',
+          subject: `BespaarCheck Lead: ${formData.companyName || formData.contactName}`,
+          from_name: 'BespaarCheck Calculator',
+          name: formData.contactName,
+          email: formData.email,
+          company: formData.companyName || 'Niet opgegeven',
+          message: buildLeadSummary(),
+          // Notificatie naar BespaarCheck
+          replyto: formData.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitStatus('success');
+      } else {
+        throw new Error(data.message || 'Verzenden mislukt');
+      }
+    } catch {
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleNext = () => {
     const currentIndex = steps.findIndex(s => s.id === currentStep);
     const isLastStep = currentIndex === steps.length - 1;
+
+    // Validate contact form on last step
+    if (isLastStep && !validateContactForm()) {
+      return;
+    }
 
     if (!isLastStep) {
       setTransitionDirection('forward');
@@ -764,25 +854,69 @@ export function CalculatorSection() {
                     </div>
 
                     {/* CTA Section */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={resetCalculator}
-                        className="px-6 py-3 rounded-xl font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
-                      >
-                        <span className="flex items-center gap-2">
-                          <ArrowRight className="w-4 h-4 rotate-180" />
+                    {submitStatus === 'success' ? (
+                      <div className="p-6 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500 mb-3">
+                          <Check className="w-6 h-6 text-white" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Aanvraag verzonden!</h4>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                          Wij nemen zo snel mogelijk contact met u op via <strong>{formData.email}</strong>.
+                        </p>
+                        <button
+                          onClick={resetCalculator}
+                          className="px-6 py-3 rounded-xl font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:text-gray-800 transition-all"
+                        >
                           Nieuwe berekening
-                        </span>
-                      </button>
-                      <button
-                        className="flex-1 px-8 py-4 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 transition-all hover:shadow-lg"
-                      >
-                        <span className="flex items-center justify-center gap-2">
-                          Vraag gratis adviesgesprek aan
-                          <ArrowRight className="w-5 h-5" />
-                        </span>
-                      </button>
-                    </div>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {submitStatus === 'error' && (
+                          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            <p className="text-red-700 dark:text-red-300 text-sm">
+                              Er ging iets mis bij het verzenden. Probeer het opnieuw of mail naar{' '}
+                              <a href="mailto:info@bespaarcheckenergie.nl" className="underline font-medium">info@bespaarcheckenergie.nl</a>.
+                            </p>
+                          </div>
+                        )}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <button
+                            onClick={resetCalculator}
+                            className="px-6 py-3 rounded-xl font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                          >
+                            <span className="flex items-center gap-2">
+                              <ArrowRight className="w-4 h-4 rotate-180" />
+                              Nieuwe berekening
+                            </span>
+                          </button>
+                          <button
+                            onClick={submitLead}
+                            disabled={isSubmitting}
+                            className={`flex-1 px-8 py-4 rounded-xl font-semibold text-white transition-all ${
+                              isSubmitting
+                                ? 'bg-emerald-400 cursor-wait'
+                                : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
+                            }`}
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              {isSubmitting ? (
+                                <>
+                                  Verzenden...
+                                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                </>
+                              ) : (
+                                <>
+                                  Vraag gratis adviesgesprek aan
+                                  <Send className="w-5 h-5" />
+                                </>
+                              )}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1290,18 +1424,31 @@ export function CalculatorSection() {
                           {/* Name */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Uw naam
+                              Uw naam <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                               <input
                                 type="text"
                                 value={formData.contactName}
-                                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, contactName: e.target.value });
+                                  if (formErrors.contactName) setFormErrors(prev => { const { contactName: _, ...rest } = prev; return rest; });
+                                }}
                                 placeholder="Jan Jansen"
-                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900 transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                                  formErrors.contactName
+                                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
+                                    : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
+                                }`}
                               />
                             </div>
+                            {formErrors.contactName && (
+                              <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                {formErrors.contactName}
+                              </p>
+                            )}
                           </div>
 
                           {/* Company */}
@@ -1331,12 +1478,24 @@ export function CalculatorSection() {
                               <input
                                 type="email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, email: e.target.value });
+                                  if (formErrors.email) setFormErrors(prev => { const { email: _, ...rest } = prev; return rest; });
+                                }}
                                 placeholder="jan@uwbedrijf.nl"
-                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900 transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                                required
+                                className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                                  formErrors.email
+                                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
+                                    : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
+                                }`}
                               />
                             </div>
+                            {formErrors.email && (
+                              <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                {formErrors.email}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -1370,9 +1529,9 @@ export function CalculatorSection() {
                       {/* Next/Analyze Button */}
                       <button
                         onClick={handleNext}
-                        disabled={(currentStep === 1 && !formData.businessType) || (currentStep === 6 && !formData.email)}
+                        disabled={(currentStep === 1 && !formData.businessType)}
                         className={`flex-1 px-8 py-4 rounded-xl font-semibold text-white transition-all ${
-                          (currentStep === 1 && !formData.businessType) || (currentStep === 6 && !formData.email)
+                          (currentStep === 1 && !formData.businessType)
                             ? 'bg-gray-300 cursor-not-allowed'
                             : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
                         }`}
