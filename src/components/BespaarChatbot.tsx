@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import { ArrowRight, Mail, Send, X } from 'lucide-react';
 import {
   buildKnowledgeContext,
-  createLocalAnswer,
   findRelevantKnowledge,
   getBespaarcheckSystemPrompt,
 } from '../lib/bespaarcheckKnowledge';
@@ -22,6 +21,8 @@ const chatCopy = {
     assistantLabel: 'BespaarCheck assistent',
     close: 'Sluit chat',
     thinking: 'Check denkt mee...',
+    unavailable:
+      'Ik kan nu geen verbinding maken met de AI. Controleer of de chatbot API en server key goed zijn ingesteld. U kunt natuurlijk wel direct contact opnemen via info@bespaarcheck.net.',
     followUpTitle: 'Vrijblijvend laten opvolgen?',
     followUpBody:
       'Er gebeurt niets automatisch. Klik alleen als u deze contactvraag per e-mail wilt doorzetten.',
@@ -48,6 +49,8 @@ const chatCopy = {
     assistantLabel: 'BespaarCheck assistant',
     close: 'Close chat',
     thinking: 'Check is thinking along...',
+    unavailable:
+      'I cannot connect to the AI right now. Please check whether the chatbot API and server key are configured correctly. You can still contact us directly at info@bespaarcheck.net.',
     followUpTitle: 'Follow up without obligation?',
     followUpBody:
       'Nothing happens automatically. Only click if you want to send this contact request by email.',
@@ -171,56 +174,13 @@ async function askLlmEndpoint(messages: ChatMessage[], question: string, languag
     }),
   });
 
-  if (response.status === 404) return null;
-
   if (!response.ok) {
-    throw new Error('Chat endpoint returned an error');
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error || `Chat endpoint returned ${response.status}`);
   }
 
   const data = (await response.json()) as { reply?: string };
   return typeof data.reply === 'string' && data.reply.trim() ? data.reply.trim() : null;
-}
-
-function getFollowUp(question: string, language: ChatLanguage) {
-  const lower = question.toLowerCase();
-
-  if (language === 'en') {
-    if (lower.includes('mandatory') || lower.includes('law') || lower.includes('regulation')) {
-      return 'Would you like me to help estimate whether your consumption is above the key thresholds?';
-    }
-
-    if (lower.includes('solar') || lower.includes('roof') || lower.includes('feed')) {
-      return 'Next, we can look at whether own consumption, roof space or feed-in matters most.';
-    }
-
-    if (lower.includes('heat pump') || lower.includes('gas') || lower.includes('heating')) {
-      return 'The interesting part is usually the combination of gas use, insulation and the heating system.';
-    }
-
-    if (lower.includes('non-binding') || lower.includes('free') || lower.includes('commit')) {
-      return 'So you can safely explore without starting a formal process right away.';
-    }
-
-    return 'If you like, I can guide you step by step to the most logical next question.';
-  }
-
-  if (lower.includes('verplicht') || lower.includes('wet') || lower.includes('regel')) {
-    return 'Wilt u dat ik u help inschatten of uw verbruik boven de belangrijkste drempelwaarden komt?';
-  }
-
-  if (lower.includes('zonne') || lower.includes('dak') || lower.includes('teruglever')) {
-    return 'We kunnen daarna kijken of eigen verbruik, dakoppervlak of teruglevering de grootste rol speelt.';
-  }
-
-  if (lower.includes('warmtepomp') || lower.includes('gas') || lower.includes('verwarming')) {
-    return 'Interessant wordt vooral de combinatie van gasverbruik, isolatie en afgiftesysteem.';
-  }
-
-  if (lower.includes('vrijblijvend') || lower.includes('gratis') || lower.includes('vast')) {
-    return 'U kunt dus veilig verkennen zonder meteen een traject te starten.';
-  }
-
-  return 'Als u wilt, kan ik u stap voor stap naar de meest logische volgende vraag brengen.';
 }
 
 export function BespaarChatbot() {
@@ -317,20 +277,16 @@ export function BespaarChatbot() {
         return;
       }
     } catch (error) {
-      console.warn('BespaarCheck chat endpoint niet beschikbaar, lokale kennisbank gebruikt:', error);
+      console.warn('BespaarCheck chat endpoint niet beschikbaar of niet goed geconfigureerd:', error);
     }
 
-    const local = createLocalAnswer(question, language);
-    const reply = normalizeAssistantText(local.reply);
-    const followUp = normalizeAssistantText(getFollowUp(question, language));
     setMessages((current) => [
       ...current,
       {
         role: 'assistant',
-        content: `${reply}\n\n${followUp}${shouldInvite ? `\n\n${copy.leadInvite}` : ''}`,
+        content: copy.unavailable,
       },
     ]);
-    if (shouldInvite) setHasInvitedLead(true);
     setIsThinking(false);
   };
 
@@ -340,7 +296,7 @@ export function BespaarChatbot() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-[60] pointer-events-none">
+    <div className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[60] pointer-events-none">
       {isOpen && (
         <div className="pointer-events-auto mb-4 flex max-h-[calc(100svh-3.5rem)] w-[calc(100vw-2rem)] max-w-[460px] flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-950 border border-gray-100 dark:border-slate-800 shadow-2xl shadow-slate-900/20 dark:shadow-black/50">
           <div
@@ -481,7 +437,7 @@ export function BespaarChatbot() {
           <button
             type="button"
             onClick={openChat}
-            className={`pointer-events-auto fixed bottom-7 right-[100px] w-[min(230px,calc(100vw-7rem))] rounded-lg border border-gray-100 bg-white px-4 py-3 text-left text-sm font-medium leading-5 text-gray-700 shadow-xl shadow-slate-900/10 transition-all duration-500 dark:border-slate-800 dark:bg-slate-950 dark:text-gray-200 dark:shadow-black/40 ${
+            className={`pointer-events-auto fixed bottom-7 right-[100px] hidden w-[min(230px,calc(100vw-7rem))] rounded-lg border border-gray-100 bg-white px-4 py-3 text-left text-sm font-medium leading-5 text-gray-700 shadow-xl shadow-slate-900/10 transition-all duration-500 dark:border-slate-800 dark:bg-slate-950 dark:text-gray-200 dark:shadow-black/40 xl:block ${
               showNudge ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'
             }`}
             aria-hidden={!showNudge}
@@ -494,13 +450,13 @@ export function BespaarChatbot() {
           <button
             type="button"
             onClick={openChat}
-            className="pointer-events-auto group relative flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-950 text-white border border-emerald-100 dark:border-slate-800 shadow-2xl shadow-emerald-950/20 dark:shadow-black/50 transition-all hover:-translate-y-0.5 sm:h-[68px] sm:w-[68px]"
+            className="pointer-events-auto group relative flex h-12 w-12 items-center justify-center rounded-full bg-white/95 dark:bg-slate-950/95 text-white border border-emerald-100 dark:border-slate-800 shadow-xl shadow-emerald-950/15 backdrop-blur dark:shadow-black/50 transition-all hover:-translate-y-0.5 sm:h-[68px] sm:w-[68px] sm:shadow-2xl"
             aria-label={copy.open}
           >
             <span className="absolute inset-0 rounded-full bg-emerald-300 dark:bg-sky-400 opacity-[0.18] animate-ping" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-lime-300 ring-4 ring-white dark:ring-slate-950" />
-            <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-violet-500 dark:to-sky-500 shadow-inner sm:h-14 sm:w-14">
-              <ChatFavicon className="h-7 w-7 drop-shadow-sm sm:h-9 sm:w-9" variant="white" />
+            <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-lime-300 ring-[3px] ring-white dark:ring-slate-950 sm:h-4 sm:w-4 sm:ring-4" />
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-violet-500 dark:to-sky-500 shadow-inner sm:h-14 sm:w-14">
+              <ChatFavicon className="h-6 w-6 drop-shadow-sm sm:h-9 sm:w-9" variant="white" />
             </span>
           </button>
         </>

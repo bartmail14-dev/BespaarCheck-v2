@@ -43,7 +43,7 @@ export function HeroSection() {
 
   return (
     <section
-      className="min-h-[88svh] flex items-center justify-center pt-24 pb-10 relative overflow-hidden transition-colors duration-700"
+      className="flex min-h-[auto] items-center justify-center pt-20 pb-8 relative overflow-hidden transition-colors duration-700 sm:min-h-[88svh] sm:pt-24 sm:pb-10"
       style={{
         backgroundImage: isDark
           ? 'linear-gradient(135deg, #070b1f 0%, #111b45 28%, #312e81 62%, #0f3f68 100%)'
@@ -77,8 +77,8 @@ export function HeroSection() {
       />
 
       <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 z-10">
-        <div className="grid min-w-0 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
-          <div className="min-w-0 text-center lg:text-left">
+        <div className="grid min-w-0 gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:gap-16 items-center">
+          <div className="min-w-0 text-center xl:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 dark:border-violet-200/20 text-white/90 text-sm font-semibold mb-7 shadow-lg shadow-black/10 dark:shadow-violet-950/20">
               <Sparkles className="w-4 h-4 text-lime-200 dark:text-violet-200" />
               {text.chip}
@@ -95,7 +95,7 @@ export function HeroSection() {
           BespaarCheck
         </h1>
         <h2
-          className="mx-auto mb-7 max-w-[22rem] overflow-wrap-anywhere font-medium text-white/90 sm:max-w-3xl lg:mx-0"
+          className="mx-auto mb-6 max-w-[22rem] overflow-wrap-anywhere font-medium text-white/90 sm:max-w-3xl xl:mx-0"
           style={{
             fontSize: 'clamp(1rem, 2.2vw, 1.75rem)',
             lineHeight: 1.3,
@@ -107,13 +107,13 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p
-          className="mx-auto mb-3 max-w-[21rem] overflow-wrap-anywhere text-white/90 leading-relaxed sm:max-w-2xl lg:mx-0"
+          className="mx-auto mb-3 max-w-[21rem] overflow-wrap-anywhere text-white/90 leading-relaxed sm:max-w-2xl xl:mx-0"
           style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)' }}
         >
           {text.intro}
         </p>
         <p
-          className="mx-auto mb-12 max-w-[21rem] overflow-wrap-anywhere font-semibold sm:max-w-2xl lg:mx-0"
+          className="mx-auto mb-8 max-w-[21rem] overflow-wrap-anywhere font-semibold sm:max-w-2xl sm:mb-12 xl:mx-0"
           style={{
             color: isDark ? '#c4b5fd' : '#bef264',
             fontSize: 'clamp(1rem, 2vw, 1.25rem)',
@@ -122,7 +122,7 @@ export function HeroSection() {
           {text.reassurance}
         </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center xl:justify-start gap-3">
               <a
                 href="#calculator"
                 className="material-button inline-flex items-center justify-center gap-2 font-semibold bg-white text-emerald-800 px-8 py-4 text-lg"
@@ -153,7 +153,7 @@ export function HeroSection() {
         </div>
           </div>
 
-          <div className="hero-route-card relative mx-auto w-full min-w-0 max-w-full sm:max-w-xl lg:mx-0">
+          <div className="hero-route-card relative mx-auto w-full min-w-0 max-w-full sm:max-w-xl xl:mx-0">
             <div className="material-surface w-full max-w-full overflow-hidden rounded-lg bg-white/92 dark:bg-slate-950/86 backdrop-blur-xl p-4 sm:p-6 border-white/35 dark:border-violet-300/20 dark:shadow-2xl dark:shadow-violet-950/30">
               <div className="flex items-start justify-between gap-4 pb-5 border-b border-gray-100 dark:border-indigo-900/50">
                 <div>
@@ -192,7 +192,7 @@ export function HeroSection() {
         </div>
 
         {/* Scroll Indicator */}
-        <div className="mt-12 animate-pulse">
+        <div className="mt-8 hidden animate-pulse sm:block xl:mt-12">
           <div className="w-px h-14 bg-white/40 mx-auto" />
         </div>
       </div>

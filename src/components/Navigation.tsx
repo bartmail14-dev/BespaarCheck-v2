@@ -117,7 +117,7 @@ export function Navigation() {
           </a>
 
           {/* Desktop menu */}
-          <div className="hidden lg:flex items-center gap-5">
+          <div className="hidden xl:flex items-center gap-5">
             <a href="#top" className="text-gray-700 hover:text-[#006fba] transition-colors font-medium">
               Home
             </a>
@@ -208,7 +208,7 @@ export function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden flex shrink-0 items-center gap-0.5 sm:gap-3">
+          <div className="xl:hidden flex shrink-0 items-center gap-0.5 sm:gap-3">
             <button
               onClick={toggleLanguage}
               className="inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-blue-100 px-2 text-xs font-bold text-[#006fba] transition-colors hover:bg-blue-50 sm:min-w-11"
@@ -252,7 +252,7 @@ export function Navigation() {
         {/* Mobile menu */}
         <div
           id="mobile-navigation"
-          className={`lg:hidden overflow-hidden border-t transition-[max-height,opacity,transform,border-color,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`xl:hidden overflow-hidden border-t transition-[max-height,opacity,transform,border-color,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isMenuOpen
               ? 'max-h-[520px] opacity-100 translate-y-0 border-gray-100 pt-3 pb-5'
               : 'max-h-0 opacity-0 -translate-y-2 border-transparent py-0 pointer-events-none'
