@@ -325,14 +325,14 @@ export function CalculatorSection() {
         name: 'Your name',
         company: 'Company name',
         email: 'Email address',
-        privacy: 'Your details are currently only used to prepare the report and email request. Final sending runs through your own email program and does not create an agreement.',
+        privacy: 'Your details are only used to send this non-binding request to BespaarCheck. This does not create an agreement and you are not committed to anything.',
         previous: 'Previous',
         next: 'Next',
         calculate: 'Calculate saving',
-        preparing: 'Preparing...',
-        prepareRequest: 'Prepare non-binding request',
-        mailOpened: 'Your email program opened with the analysis. Sending is non-binding and does not commit you to anything.',
-        mailError: 'Something went wrong while opening your email program. Email directly to',
+        preparing: 'Sending...',
+        prepareRequest: 'Send non-binding request',
+        mailOpened: 'Your request has been sent. A colleague can calmly look at the possibilities with you. You are not committed to anything.',
+        mailError: 'Something went wrong while sending. Email directly to',
       }
     : {
         chip: 'Direct inzicht',
@@ -385,14 +385,14 @@ export function CalculatorSection() {
         name: 'Uw naam',
         company: 'Bedrijfsnaam',
         email: 'E-mailadres',
-        privacy: 'Uw gegevens worden nu alleen gebruikt om het rapport en de e-mailaanvraag voor te bereiden. De definitieve verzending loopt via uw eigen e-mailprogramma en leidt niet tot een overeenkomst.',
+        privacy: 'Uw gegevens worden alleen gebruikt om deze vrijblijvende aanvraag naar BespaarCheck te sturen. Dit leidt niet tot een overeenkomst en u zit nergens aan vast.',
         previous: 'Vorige',
         next: 'Volgende',
         calculate: 'Bereken besparing',
-        preparing: 'Voorbereiden...',
-        prepareRequest: 'Zet vrijblijvende aanvraag klaar',
-        mailOpened: 'Uw e-mailprogramma is geopend met de analyse. Versturen is vrijblijvend en verplicht u tot niets.',
-        mailError: 'Er ging iets mis bij het openen van uw e-mailprogramma. Mail rechtstreeks naar',
+        preparing: 'Versturen...',
+        prepareRequest: 'Verstuur vrijblijvende aanvraag',
+        mailOpened: 'Uw aanvraag is verzonden. Een collega kan rustig meekijken naar de mogelijkheden. U zit nergens aan vast.',
+        mailError: 'Er ging iets mis bij het versturen. Mail rechtstreeks naar',
       };
 
   // Fetch energy prices on mount
@@ -709,22 +709,7 @@ export function CalculatorSection() {
     return lines.join('\n');
   };
 
-  const createMailtoHref = () => {
-    const subject = encodeURIComponent(`BespaarCheck aanvraag: ${formData.companyName || formData.contactName}`);
-    const body = encodeURIComponent(
-      [
-        `Naam: ${formData.contactName}`,
-        `E-mail: ${formData.email}`,
-        `Bedrijf: ${formData.companyName || 'Niet opgegeven'}`,
-        '',
-        buildLeadSummary(),
-      ].join('\n')
-    );
-
-    return `mailto:info@bespaarcheck.net?subject=${subject}&body=${body}`;
-  };
-
-  const submitLead = () => {
+  const submitLead = async () => {
     if (isSubmitting) return;
     // Honeypot spam check
     if (formData.honeypot) {
@@ -735,7 +720,40 @@ export function CalculatorSection() {
     setSubmitStatus('idle');
 
     try {
-      window.location.href = createMailtoHref();
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'calculator',
+          language: isEnglish ? 'en' : 'nl',
+          honeypot: formData.honeypot,
+          contact: {
+            name: formData.contactName,
+            company: formData.companyName,
+            email: formData.email,
+          },
+          report: {
+            businessType: businessTypes.find(type => type.value === formData.businessType)?.label || formData.businessType,
+            buildingSize: `${formData.buildingSize.toLocaleString()} m2`,
+            electricityUsage: `${formData.electricityUsage.toLocaleString()} kWh/jaar`,
+            gasUsage: `${formData.gasUsage.toLocaleString()} m3/jaar`,
+            contractType: formData.contractType || 'Niet opgegeven',
+            existingInstallations: formData.existingInstallations.length > 0 ?formData.existingInstallations.join(', ') : 'Geen',
+            priorities: formData.priorities.length > 0 ?formData.priorities.join(', ') : 'Niet opgegeven',
+            yearlySavings: results ?`EUR ${results.yearlySavings.toLocaleString()}/jaar` : '',
+            totalInvestment: results ?`EUR ${results.totalInvestment.toLocaleString()}` : '',
+            paybackPeriod: results ?`${results.paybackPeriod} jaar` : '',
+            summary: buildLeadSummary(),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Contact endpoint returned an error');
+      }
+
       setSubmitStatus('success');
     } catch {
       setSubmitStatus('error');

@@ -17,7 +17,7 @@ const chatCopy = {
     leadInvite:
       'Als u wilt, kan een collega vrijblijvend meekijken naar de mogelijkheden. U kunt gerust uw e-mailadres of telefoonnummer delen; er gebeurt niets automatisch, het is geen overeenkomst en u zit nergens aan vast.',
     contactReply:
-      'Dank u. Ik zet hieronder een vrijblijvende contactactie klaar. Er wordt niets automatisch verstuurd; u bepaalt zelf of u dit doorzet. Een collega kan dan rustig meekijken naar de mogelijkheden en u zit nergens aan vast.',
+      'Dank u. Ik zet hieronder een vrijblijvende contactactie klaar. U bepaalt zelf of u dit doorzet. Een collega kan dan rustig meekijken naar de mogelijkheden en u zit nergens aan vast.',
     assistantLabel: 'BespaarCheck assistent',
     close: 'Sluit chat',
     thinking: 'Check denkt mee...',
@@ -25,8 +25,11 @@ const chatCopy = {
       'Ik kan nu geen verbinding maken met de AI. Controleer of de chatbot API en server key goed zijn ingesteld. U kunt natuurlijk wel direct contact opnemen via info@bespaarcheck.net.',
     followUpTitle: 'Vrijblijvend laten opvolgen?',
     followUpBody:
-      'Er gebeurt niets automatisch. Klik alleen als u deze contactvraag per e-mail wilt doorzetten.',
-    followUpAction: 'Zet vrijblijvend door',
+      'Klik alleen als u deze contactvraag naar BespaarCheck wilt sturen. Het is vrijblijvend en u zit nergens aan vast.',
+    followUpAction: 'Verstuur vrijblijvend',
+    followUpSending: 'Versturen...',
+    followUpSent: 'Verzonden. Een collega kan rustig meekijken en u zit nergens aan vast.',
+    followUpError: 'Versturen lukte niet. Mail gerust rechtstreeks naar info@bespaarcheck.net.',
     inputLabel: 'Stel uw vraag aan Check',
     placeholder: 'Bijv. kantoor 450 m2...',
     send: 'Verstuur bericht',
@@ -45,7 +48,7 @@ const chatCopy = {
     leadInvite:
       'If you like, a colleague can take a non-binding look at the possibilities. You can safely share your email address or phone number; nothing happens automatically, it is not an agreement and you are not committed to anything.',
     contactReply:
-      'Thank you. I have prepared a non-binding contact step below. Nothing is sent automatically; you decide whether to continue. A colleague can calmly look at the possibilities with you and you are not committed to anything.',
+      'Thank you. I have prepared a non-binding contact step below. You decide whether to continue. A colleague can calmly look at the possibilities with you and you are not committed to anything.',
     assistantLabel: 'BespaarCheck assistant',
     close: 'Close chat',
     thinking: 'Check is thinking along...',
@@ -53,8 +56,11 @@ const chatCopy = {
       'I cannot connect to the AI right now. Please check whether the chatbot API and server key are configured correctly. You can still contact us directly at info@bespaarcheck.net.',
     followUpTitle: 'Follow up without obligation?',
     followUpBody:
-      'Nothing happens automatically. Only click if you want to send this contact request by email.',
+      'Only click if you want to send this contact request to BespaarCheck. It is non-binding and you are not committed to anything.',
     followUpAction: 'Send non-binding request',
+    followUpSending: 'Sending...',
+    followUpSent: 'Sent. A colleague can calmly look at the possibilities and you are not committed to anything.',
+    followUpError: 'Sending failed. You can still email info@bespaarcheck.net directly.',
     inputLabel: 'Ask Check your question',
     placeholder: 'For example office 450 m2...',
     send: 'Send message',
@@ -115,29 +121,6 @@ function shouldInviteLead(messages: ChatMessage[], question: string, language: C
   return userMessages >= 2 || intent;
 }
 
-function buildLeadMailto(messages: ChatMessage[], contactDetail: string, language: ChatLanguage) {
-  const copy = chatCopy[language];
-  const subject = encodeURIComponent(copy.mailSubject);
-  const conversation = messages
-    .slice(-8)
-    .map((message) => `${message.role === 'user' ? copy.visitor : 'Check'}: ${message.content}`)
-    .join('\n\n');
-  const body = encodeURIComponent(
-    [
-      copy.mailIntro,
-      '',
-      `${copy.mailContact}: ${contactDetail}`,
-      '',
-      `${copy.mailContext}:`,
-      conversation,
-      '',
-      copy.note,
-    ].join('\n')
-  );
-
-  return `mailto:info@bespaarcheck.net?subject=${subject}&body=${body}`;
-}
-
 function ChatFavicon({
   className = 'h-6 w-6',
   variant = 'default',
@@ -194,6 +177,7 @@ export function BespaarChatbot() {
   const [isThinking, setIsThinking] = useState(false);
   const [hasInvitedLead, setHasInvitedLead] = useState(false);
   const [leadContact, setLeadContact] = useState<string | null>(null);
+  const [leadStatus, setLeadStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const conversationRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -207,6 +191,7 @@ export function BespaarChatbot() {
       setInput('');
       setHasInvitedLead(false);
       setLeadContact(null);
+      setLeadStatus('idle');
     }, 0);
 
     return () => clearTimeout(resetTimer);
@@ -250,6 +235,7 @@ export function BespaarChatbot() {
 
     if (contactDetail) {
       setLeadContact(contactDetail);
+      setLeadStatus('idle');
       setHasInvitedLead(true);
       setMessages([
         ...nextMessages,
@@ -288,6 +274,40 @@ export function BespaarChatbot() {
       },
     ]);
     setIsThinking(false);
+  };
+
+  const submitChatLead = async () => {
+    if (!leadContact || leadStatus === 'sending') return;
+
+    setLeadStatus('sending');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'chatbot',
+          language,
+          contact: {
+            detail: leadContact,
+            email: emailPattern.test(leadContact) ? leadContact : '',
+            phone: emailPattern.test(leadContact) ? '' : leadContact,
+          },
+          messages,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Contact endpoint returned an error');
+      }
+
+      setLeadStatus('sent');
+    } catch (error) {
+      console.warn('BespaarCheck contact endpoint niet beschikbaar of niet goed geconfigureerd:', error);
+      setLeadStatus('error');
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -389,13 +409,31 @@ export function BespaarChatbot() {
                     <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">
                       {copy.followUpBody}
                     </p>
-                    <a
-                      href={buildLeadMailto(messages, leadContact, language)}
-                      className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+                    {leadStatus === 'sent' || leadStatus === 'error' ? (
+                      <p
+                        className={`mt-3 text-sm font-semibold ${
+                          leadStatus === 'sent'
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-red-600 dark:text-red-300'
+                        }`}
+                      >
+                        {leadStatus === 'sent' ? copy.followUpSent : copy.followUpError}
+                      </p>
+                    ) : (
+                    <button
+                      type="button"
+                      onClick={submitChatLead}
+                      disabled={leadStatus === 'sending'}
+                      className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-300 dark:hover:text-emerald-200"
                     >
-                      {copy.followUpAction}
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
+                      {leadStatus === 'sending' ? copy.followUpSending : copy.followUpAction}
+                      {leadStatus === 'sending' ? (
+                        <span className="h-4 w-4 rounded-full border-2 border-emerald-700/30 border-t-emerald-700 animate-spin dark:border-emerald-300/30 dark:border-t-emerald-300" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    )}
                   </div>
                 </div>
               </div>
