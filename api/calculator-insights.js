@@ -66,12 +66,18 @@ function normalizeInsight(data, language) {
           summary: 'The calculation gives a first direction. A specialist can check the exact feasibility without obligation.',
           nextSteps: ['Check the current contract and annual use', 'Prioritise the measure with the shortest payback time'],
           attentionPoints: ['Figures are indicative and depend on the building and current rates'],
+          sanityLevel: 'review',
+          sanitySummary: 'The outcome looks usable as an initial estimate, but the underlying assumptions should be checked before making decisions.',
+          sanityChecks: ['Compare the savings percentage with the current annual energy costs', 'Check whether investment and payback time fit the selected measures'],
           confidenceNote: 'This is an AI explanation of the calculator result, not financial or legal advice.',
         }
       : {
           summary: 'De berekening geeft een eerste richting. Een specialist kan de exacte haalbaarheid vrijblijvend controleren.',
           nextSteps: ['Controleer het actuele contract en jaarverbruik', 'Geef prioriteit aan de maatregel met de kortste terugverdientijd'],
           attentionPoints: ['De cijfers zijn indicatief en hangen af van het pand en de actuele tarieven'],
+          sanityLevel: 'controleren',
+          sanitySummary: 'De uitkomst is bruikbaar als eerste indicatie, maar de aannames moeten worden gecontroleerd voordat er beslissingen op worden gebaseerd.',
+          sanityChecks: ['Vergelijk het besparingspercentage met de huidige jaarlijkse energiekosten', 'Controleer of investering en terugverdientijd passen bij de gekozen maatregelen'],
           confidenceNote: 'Dit is een AI-toelichting op de calculatoruitkomst, geen financieel of juridisch advies.',
         };
 
@@ -88,6 +94,9 @@ function normalizeInsight(data, language) {
     attentionPoints: cleanList(data.attentionPoints).length
       ? cleanList(data.attentionPoints)
       : fallback.attentionPoints,
+    sanityLevel: cleanText(data.sanityLevel, 80) || fallback.sanityLevel,
+    sanitySummary: cleanText(data.sanitySummary, 420) || fallback.sanitySummary,
+    sanityChecks: cleanList(data.sanityChecks).length ? cleanList(data.sanityChecks) : fallback.sanityChecks,
     confidenceNote: cleanText(data.confidenceNote, 260) || fallback.confidenceNote,
   };
 }
@@ -102,13 +111,23 @@ function buildPrompt(body) {
   return `
 ${instruction}
 
-You are adding the final AI explanation layer to a deterministic energy saving calculator. Do not change the numbers. Do not invent guarantees. Give practical interpretation only.
+You are adding the final AI explanation layer to a deterministic energy saving calculator. Do not change the numbers. Do not invent guarantees.
+
+Perform a strict sanity check before writing the explanation:
+1. Check whether yearly savings are plausible compared with current annual costs.
+2. Check whether total investment and payback period mathematically make sense.
+3. Check whether recommendations fit the entered building type, energy use and existing installations.
+4. Flag anything that seems optimistic, incomplete or dependent on missing data.
+5. If the outcome looks plausible, say that calmly. If it needs review, explain what must be checked.
 
 Return strict JSON with:
 {
   "summary": "max 2 sentences",
   "nextSteps": ["2 or 3 practical next steps"],
   "attentionPoints": ["1 to 3 relevant checks or caveats"],
+  "sanityLevel": "one short label: plausible, review or caution",
+  "sanitySummary": "critical sanity check summary in max 2 sentences",
+  "sanityChecks": ["2 or 3 concrete plausibility checks or red flags"],
   "confidenceNote": "short note that the result is indicative"
 }
 
@@ -137,8 +156,8 @@ async function requestGemini({ apiKey, model, prompt }) {
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 700,
-          temperature: 0.35,
+          maxOutputTokens: 1000,
+          temperature: 0.2,
           responseMimeType: 'application/json',
         },
       }),

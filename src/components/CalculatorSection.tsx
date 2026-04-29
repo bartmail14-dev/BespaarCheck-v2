@@ -243,6 +243,9 @@ interface CalculatorInsight {
   summary: string;
   nextSteps: string[];
   attentionPoints: string[];
+  sanityLevel: string;
+  sanitySummary: string;
+  sanityChecks: string[];
   confidenceNote: string;
 }
 
@@ -345,6 +348,7 @@ export function CalculatorSection() {
         aiTitle: 'Smart interpretation',
         aiLoading: 'Gemini is interpreting your result...',
         aiUnavailable: 'The AI interpretation is temporarily unavailable. The calculation above remains usable.',
+        sanityTitle: 'Sanity check',
         nextSteps: 'Logical next steps',
         attentionPoints: 'Worth checking',
       }
@@ -410,6 +414,7 @@ export function CalculatorSection() {
         aiTitle: 'Slimme toelichting',
         aiLoading: 'Gemini duidt uw resultaat...',
         aiUnavailable: 'De AI-toelichting is tijdelijk niet beschikbaar. De berekening hierboven blijft gewoon bruikbaar.',
+        sanityTitle: 'Sanitycheck',
         nextSteps: 'Logische vervolgstappen',
         attentionPoints: 'Goed om te controleren',
       };
@@ -754,9 +759,17 @@ export function CalculatorSection() {
             result: {
               currentCosts: calculatedResults.currentCosts,
               yearlySavings: calculatedResults.yearlySavings,
+              savingsShareOfCurrentCosts:
+                calculatedResults.currentCosts.total > 0
+                  ? Math.round((calculatedResults.yearlySavings / calculatedResults.currentCosts.total) * 1000) / 10
+                  : 0,
               co2Reduction: calculatedResults.co2Reduction,
               paybackPeriod: calculatedResults.paybackPeriod,
               totalInvestment: calculatedResults.totalInvestment,
+              calculatedPaybackCheck:
+                calculatedResults.yearlySavings > 0
+                  ? Math.round((calculatedResults.totalInvestment / calculatedResults.yearlySavings) * 10) / 10
+                  : 0,
               recommendations: calculatedResults.recommendations,
             },
           },
@@ -1210,6 +1223,23 @@ export function CalculatorSection() {
                       {insightStatus === 'ready' && calculatorInsight ? (
                         <div className="space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-200">
                           <p>{calculatorInsight.summary}</p>
+                          <div className="rounded-lg border border-amber-100 bg-white p-4 dark:border-amber-900/60 dark:bg-slate-950/50">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-gray-900 dark:text-white">{t.sanityTitle}</p>
+                              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+                                {calculatorInsight.sanityLevel}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-200">{calculatorInsight.sanitySummary}</p>
+                            <ul className="mt-3 space-y-2">
+                              {calculatorInsight.sanityChecks.map((item) => (
+                                <li key={item} className="flex gap-2">
+                                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-300" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                           <div className="grid gap-4 sm:grid-cols-2">
                             <div>
                               <p className="mb-2 font-semibold text-gray-900 dark:text-white">{t.nextSteps}</p>
