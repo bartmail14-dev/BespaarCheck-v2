@@ -77,18 +77,59 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
 }
 
-function toHtmlBlock(title, lines) {
+function toDetailRows(lines) {
   const rows = lines
     .filter((line) => line.value)
     .map(
       (line) =>
-        `<tr><td style="padding:6px 12px 6px 0;color:#475569;font-weight:600;vertical-align:top;">${escapeHtml(line.label)}</td><td style="padding:6px 0;color:#0f172a;vertical-align:top;">${escapeHtml(line.value)}</td></tr>`
+        `<tr>
+          <td style="padding:12px 16px;color:#64748b;font-weight:700;vertical-align:top;border-bottom:1px solid #e2e8f0;width:44%;">${escapeHtml(line.label)}</td>
+          <td style="padding:12px 16px;color:#0f172a;vertical-align:top;border-bottom:1px solid #e2e8f0;">${escapeHtml(line.value)}</td>
+        </tr>`
     )
     .join('');
 
+  return rows.replace(/border-bottom:1px solid #e2e8f0;(?![\s\S]*border-bottom:1px solid #e2e8f0;)/, '');
+}
+
+function toSection(title, lines) {
+  const rows = toDetailRows(lines);
+  if (!rows) return '';
+
   return `
-    <h2 style="font-family:Arial,sans-serif;font-size:18px;color:#0f172a;margin:24px 0 8px;">${escapeHtml(title)}</h2>
-    <table style="font-family:Arial,sans-serif;font-size:14px;border-collapse:collapse;">${rows}</table>
+    <tr>
+      <td style="padding:24px 30px 0;">
+        <h2 style="margin:0 0 12px;font-size:19px;line-height:1.35;color:#0f172a;">${escapeHtml(title)}</h2>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;border-spacing:0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;font-size:14px;line-height:1.5;">
+          ${rows}
+        </table>
+      </td>
+    </tr>
+  `;
+}
+
+function toMetricCard(label, value, color, background, border) {
+  if (!value) return '';
+
+  return `
+    <td class="metric-cell" style="padding:18px;border-radius:14px;background:${background};border:1px solid ${border};vertical-align:top;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:0.04em;">${escapeHtml(label)}</p>
+      <p style="margin:0;font-size:25px;line-height:1.16;font-weight:900;color:${color};">${escapeHtml(value)}</p>
+    </td>
+  `;
+}
+
+function toReportSummary(summary) {
+  const cleanSummary = cleanText(summary, 3000);
+  if (!cleanSummary) return '';
+
+  return `
+    <tr>
+      <td style="padding:24px 30px 0;">
+        <h2 style="margin:0 0 12px;font-size:19px;line-height:1.35;color:#0f172a;">Samenvatting uit de calculator</h2>
+        <pre style="margin:0;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#334155;">${escapeHtml(cleanSummary)}</pre>
+      </td>
+    </tr>
   `;
 }
 
@@ -152,20 +193,79 @@ function buildEmail(payload) {
     { label: 'Terugverdientijd', value: report.paybackPeriod },
   ];
 
+  const primaryMetric = report.yearlySavings || (source === 'chatbot' ? 'Chatbot lead' : 'Nieuwe aanvraag');
+  const secondaryMetric = report.paybackPeriod || 'Vrijblijvend';
+  const tertiaryMetric = report.totalInvestment || company || name || contactDetail || 'Opvolgen';
+
   const htmlBody = `
-    <div style="font-family:Arial,sans-serif;max-width:720px;color:#0f172a;">
-      <h1 style="font-size:22px;margin:0 0 12px;">Nieuwe vrijblijvende aanvraag via BespaarCheck</h1>
-      <p style="font-size:14px;line-height:1.6;color:#475569;">
-        Deze aanvraag is vrijblijvend. De bezoeker zit nergens aan vast en verwacht eerst rustig contact over de mogelijkheden.
-      </p>
-      ${toHtmlBlock('Contactgegevens', contactRows)}
-      ${toHtmlBlock('Calculatorgegevens', reportRows)}
-      ${
-        conversation
-          ? `<h2 style="font-family:Arial,sans-serif;font-size:18px;color:#0f172a;margin:24px 0 8px;">Chatgesprek</h2><pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;">${escapeHtml(conversation)}</pre>`
-          : ''
-      }
-    </div>
+    <!doctype html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <style>
+          @media only screen and (max-width: 620px) {
+            .wrapper { padding: 16px 8px !important; }
+            .container { border-radius: 12px !important; }
+            .header, .content-pad { padding-left: 18px !important; padding-right: 18px !important; }
+            .metric-table, .metric-table tbody, .metric-table tr, .metric-cell { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+            .metric-spacer { display: none !important; }
+            .metric-cell { margin-bottom: 10px !important; }
+            h1 { font-size: 24px !important; }
+          }
+        </style>
+      </head>
+      <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+        <div style="display:none;max-height:0;overflow:hidden;color:transparent;opacity:0;">
+          Nieuwe vrijblijvende aanvraag via BespaarCheck. Rustig opvolgen, nergens aan vast.
+        </div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="wrapper" style="background:#f1f5f9;padding:28px 12px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="container" style="max-width:740px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #dbe4ee;box-shadow:0 18px 48px rgba(15,23,42,0.10);">
+                <tr>
+                  <td class="header" style="background:#006fba;padding:28px 30px;color:#ffffff;">
+                    <div style="display:inline-block;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:800;">BespaarCheck</div>
+                    <h1 style="margin:18px 0 8px;font-size:28px;line-height:1.18;font-weight:900;color:#ffffff;">Nieuwe vrijblijvende aanvraag</h1>
+                    <p style="margin:0;font-size:15px;line-height:1.7;color:#e0f2fe;">Een bezoeker wil rustig contact over energiebesparing, verduurzaming of regelgeving. De aanvraag is vrijblijvend en verplicht tot niets.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="content-pad" style="padding:24px 30px 4px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="metric-table">
+                      <tr>
+                        ${toMetricCard(source === 'chatbot' ? 'Leadtype' : 'Potentiele besparing', primaryMetric, '#065f46', '#ecfdf5', '#bbf7d0')}
+                        <td class="metric-spacer" width="12"></td>
+                        ${toMetricCard(source === 'chatbot' ? 'Status' : 'Terugverdientijd', secondaryMetric, '#1e3a8a', '#eff6ff', '#bfdbfe')}
+                        <td class="metric-spacer" width="12"></td>
+                        ${toMetricCard(source === 'chatbot' ? 'Contact' : 'Investering', tertiaryMetric, '#6d28d9', '#f5f3ff', '#ddd6fe')}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                ${toSection('Contactgegevens', contactRows)}
+                ${toSection('Calculatorgegevens', reportRows)}
+                ${toReportSummary(report.summary)}
+                ${
+                  conversation
+                    ? `<tr><td style="padding:24px 30px 0;"><h2 style="margin:0 0 12px;font-size:19px;line-height:1.35;color:#0f172a;">Chatgesprek</h2><pre style="margin:0;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#334155;">${escapeHtml(conversation)}</pre></td></tr>`
+                    : ''
+                }
+                <tr>
+                  <td class="content-pad" style="padding:24px 30px 30px;">
+                    <div style="padding:18px 20px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:14px;line-height:1.7;">
+                      <strong style="display:block;color:#0f172a;margin-bottom:4px;">Vrijblijvend opvolgen</strong>
+                      Neem rustig contact op om de mogelijkheden te bespreken. Er wordt niets automatisch gestart, er is geen overeenkomst en de bezoeker zit nergens aan vast.
+                    </div>
+                    <p style="margin:18px 0 0;text-align:center;font-size:12px;color:#94a3b8;">bespaarcheck.net</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `;
 
   const textBody = [
