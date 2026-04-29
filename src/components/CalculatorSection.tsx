@@ -810,7 +810,7 @@ export function CalculatorSection() {
       ref={containerRef}
       className="material-section relative overflow-hidden transition-colors duration-300"
       style={{
-        background: isDark
+        backgroundImage: isDark
           ?'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)'
           : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
       }}
@@ -820,14 +820,14 @@ export function CalculatorSection() {
         <div
           className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30"
           style={{
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+            backgroundImage: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
             filter: 'blur(60px)',
           }}
         />
         <div
           className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20"
           style={{
-            background: 'radial-gradient(circle, rgba(13, 148, 136, 0.3) 0%, transparent 70%)',
+            backgroundImage: 'radial-gradient(circle, rgba(13, 148, 136, 0.3) 0%, transparent 70%)',
             filter: 'blur(60px)',
           }}
         />
@@ -872,13 +872,13 @@ export function CalculatorSection() {
             <div
               className="h-1 w-full"
               style={{
-                background: 'linear-gradient(90deg, #0d9488 0%, #059669 50%, #16a34a 100%)',
+                backgroundImage: 'linear-gradient(90deg, #0d9488 0%, #059669 50%, #16a34a 100%)',
               }}
             >
               <div
                 className="absolute inset-0"
                 style={{
-                  background: isDark
+                  backgroundImage: isDark
                     ?'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)'
                     : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
                   animation: 'shimmer-line 5s ease-in-out infinite',
@@ -1773,12 +1773,12 @@ export function CalculatorSection() {
                     )}
 
                     {/* Navigation */}
-                    <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 sm:flex-row sm:gap-4">
                       {/* Back Button */}
                       <button
                         onClick={handlePrevious}
                         disabled={currentStepIndex === 0}
-                        className={`px-6 py-3 rounded-lg font-medium transition-all border ${
+                        className={`w-full px-4 py-3 rounded-lg font-medium transition-all border sm:w-auto sm:px-6 ${
                           currentStepIndex === 0
                             ?'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
                             : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -1794,7 +1794,7 @@ export function CalculatorSection() {
                       <button
                         onClick={handleNext}
                         disabled={(currentStep === 1 && !formData.businessType)}
-                        className={`flex-1 px-8 py-4 rounded-lg font-semibold text-white transition-all ${
+                        className={`w-full px-4 py-4 rounded-lg font-semibold text-white transition-all sm:flex-1 sm:px-8 ${
                           (currentStep === 1 && !formData.businessType)
                             ?'bg-gray-300 cursor-not-allowed'
                             : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'

@@ -494,13 +494,13 @@ export function BespaarChatbot() {
           <button
             type="button"
             onClick={openChat}
-            className="pointer-events-auto group relative flex h-[68px] w-[68px] items-center justify-center rounded-full bg-white dark:bg-slate-950 text-white border border-emerald-100 dark:border-slate-800 shadow-2xl shadow-emerald-950/20 dark:shadow-black/50 transition-all hover:-translate-y-0.5"
+            className="pointer-events-auto group relative flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-950 text-white border border-emerald-100 dark:border-slate-800 shadow-2xl shadow-emerald-950/20 dark:shadow-black/50 transition-all hover:-translate-y-0.5 sm:h-[68px] sm:w-[68px]"
             aria-label={copy.open}
           >
             <span className="absolute inset-0 rounded-full bg-emerald-300 dark:bg-sky-400 opacity-[0.18] animate-ping" />
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-lime-300 ring-4 ring-white dark:ring-slate-950" />
-            <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-violet-500 dark:to-sky-500 shadow-inner">
-              <ChatFavicon className="h-9 w-9 drop-shadow-sm" variant="white" />
+            <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-violet-500 dark:to-sky-500 shadow-inner sm:h-14 sm:w-14">
+              <ChatFavicon className="h-7 w-7 drop-shadow-sm sm:h-9 sm:w-9" variant="white" />
             </span>
           </button>
         </>

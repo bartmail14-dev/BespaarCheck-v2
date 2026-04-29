@@ -106,13 +106,13 @@ export function Navigation() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between gap-2 h-16">
           {/* Logo */}
-          <a href="#top" className="flex items-center">
+          <a href="#top" className="flex min-w-0 items-center">
             <img
               src="/logo.png"
               alt="BespaarCheck"
-              className="h-10"
+              className="h-7 w-auto max-w-[150px] sm:h-10 sm:max-w-[190px]"
             />
           </a>
 
@@ -128,7 +128,9 @@ export function Navigation() {
                   e.stopPropagation();
                   setIsDropdownOpen(!isDropdownOpen);
                 }}
-                  className="flex items-center gap-1 text-gray-700 hover:text-[#006fba] transition-colors font-medium"
+                className="flex items-center gap-1 text-gray-700 hover:text-[#006fba] transition-colors font-medium"
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="true"
               >
                 {labels.opportunities}
                 <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -206,10 +208,10 @@ export function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="lg:hidden flex shrink-0 items-center gap-0.5 sm:gap-3">
             <button
               onClick={toggleLanguage}
-              className="inline-flex h-9 min-w-11 items-center justify-center gap-1 rounded-lg border border-blue-100 px-2 text-xs font-bold text-[#006fba] transition-colors hover:bg-blue-50"
+              className="inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-blue-100 px-2 text-xs font-bold text-[#006fba] transition-colors hover:bg-blue-50 sm:min-w-11"
               aria-label={labels.language}
             >
               {language.toUpperCase()}
@@ -218,7 +220,7 @@ export function Navigation() {
             {/* Mobile dark mode toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+              className="h-9 w-9 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center sm:h-10 sm:w-10"
               style={{ color: logoBlue }}
               aria-label={labels.darkMode}
             >
@@ -227,10 +229,11 @@ export function Navigation() {
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="relative h-10 w-10 hover:bg-blue-50 rounded-lg transition-colors"
+              className="relative h-9 w-9 hover:bg-blue-50 rounded-lg transition-colors sm:h-10 sm:w-10"
               style={{ color: logoBlue }}
               aria-label={isMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={isMenuOpen}
+              aria-controls="mobile-navigation"
             >
               <Menu
                 className={`absolute left-1/2 top-1/2 w-6 h-6 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
@@ -248,6 +251,7 @@ export function Navigation() {
 
         {/* Mobile menu */}
         <div
+          id="mobile-navigation"
           className={`lg:hidden overflow-hidden border-t transition-[max-height,opacity,transform,border-color,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isMenuOpen
               ? 'max-h-[520px] opacity-100 translate-y-0 border-gray-100 pt-3 pb-5'

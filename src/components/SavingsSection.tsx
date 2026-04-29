@@ -406,6 +406,8 @@ export function SavingsSection() {
                     onClick={() => setExpandedId(isExpanded ?null : item.id)}
                     className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-all"
                     aria-label={`${isExpanded ? text.close : text.open} ${item.title}`}
+                    aria-expanded={isExpanded}
+                    aria-controls={`savings-details-${item.id}`}
                   >
                     <ChevronDown
                       className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-300 ${
@@ -427,6 +429,7 @@ export function SavingsSection() {
 
                 {/* Expanded Details */}
                 <div
+                  id={`savings-details-${item.id}`}
                   className={`overflow-hidden transition-all duration-500 ease-out ${
                     isExpanded ?'max-h-[560px] opacity-100 mt-5' : 'max-h-0 opacity-0'
                   }`}
@@ -439,7 +442,7 @@ export function SavingsSection() {
                   >
                     <div
                       className="h-1 w-full"
-                      style={{ background: `linear-gradient(90deg, ${item.color}, ${item.color}88)` }}
+                      style={{ backgroundImage: `linear-gradient(90deg, ${item.color}, ${item.color}88)` }}
                     />
                     <div className="p-5">
                       <div className="flex items-start gap-3">
@@ -495,6 +498,7 @@ export function SavingsSection() {
                         <button
                           onClick={() => openModal(item)}
                           className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                          aria-label={`${text.more} ${item.title}`}
                           style={{
                             backgroundColor: item.color,
                             boxShadow: `0 12px 24px ${item.color}22`,
@@ -531,6 +535,7 @@ export function SavingsSection() {
             isModalClosing ?'opacity-0' : 'opacity-100'
           }`}
           onClick={closeModal}
+          role="presentation"
         >
           {/* Backdrop */}
           <div
@@ -547,6 +552,9 @@ export function SavingsSection() {
                 : 'opacity-100 scale-100 translate-y-0'
             }`}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`savings-modal-title-${modalItem.id}`}
             style={{
               animation: !isModalClosing ?'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : undefined,
             }}
@@ -555,7 +563,7 @@ export function SavingsSection() {
             <div
               className="relative overflow-hidden p-4 sm:p-6"
               style={{
-                background: `linear-gradient(135deg, ${modalItem.color} 0%, ${modalItem.color}dd 100%)`,
+                backgroundImage: `linear-gradient(135deg, ${modalItem.color} 0%, ${modalItem.color}dd 100%)`,
               }}
             >
               {/* Decorative circles */}
@@ -572,6 +580,7 @@ export function SavingsSection() {
               <button
                 onClick={closeModal}
                 className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all hover:-translate-y-0.5 cursor-pointer"
+                aria-label={text.close}
               >
                 <X className="w-6 h-6 text-white" />
               </button>
@@ -582,7 +591,7 @@ export function SavingsSection() {
                   <modalItem.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white">{modalItem.title}</h3>
+                  <h3 id={`savings-modal-title-${modalItem.id}`} className="text-xl sm:text-2xl font-bold text-white">{modalItem.title}</h3>
                   <p className="text-white/85 text-sm sm:text-base leading-6 mt-1">{modalItem.description}</p>
                 </div>
               </div>

@@ -186,6 +186,7 @@ export function FAQSection() {
                     onClick={() => setExpandedIndex(isExpanded ? null : index)}
                     className="w-full p-4 sm:p-5 flex items-center gap-4 text-left transition-colors hover:bg-white dark:hover:bg-slate-950"
                     aria-expanded={isExpanded}
+                    aria-controls={`faq-answer-${index}`}
                   >
                     <span
                       className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold transition-colors ${
@@ -207,6 +208,7 @@ export function FAQSection() {
                   </button>
 
                   <div
+                    id={`faq-answer-${index}`}
                     className={`grid transition-all duration-500 ease-in-out ${
                       isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                     }`}

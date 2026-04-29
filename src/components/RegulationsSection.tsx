@@ -533,6 +533,7 @@ export function RegulationsSection() {
                   onClick={() => setExpandedId(isExpanded ? null : item.id)}
                   className="w-full p-4 sm:p-5 flex items-start gap-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/70 transition-colors"
                   aria-expanded={isExpanded}
+                  aria-controls={`regulation-answer-${item.id}`}
                 >
                   <div
                     className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300"
@@ -559,6 +560,7 @@ export function RegulationsSection() {
                 </button>
 
                 <div
+                  id={`regulation-answer-${item.id}`}
                   className={`grid transition-all duration-500 ease-in-out ${
                     isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                   }`}
@@ -658,7 +660,32 @@ export function RegulationsSection() {
             {text.quickTitle}
           </h3>
 
-          <div className="overflow-x-auto">
+          <div className="grid gap-3 sm:hidden">
+            {rows.map(([name, threshold, frequency]) => (
+              <div
+                key={name}
+                className="rounded-lg border border-gray-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <p className="font-semibold text-gray-900 dark:text-white">{name}</p>
+                <dl className="mt-3 grid gap-2 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">
+                      {text.table[1]}
+                    </dt>
+                    <dd className="mt-1 text-gray-600 dark:text-gray-300">{threshold}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">
+                      {text.table[2]}
+                    </dt>
+                    <dd className="mt-1 text-gray-600 dark:text-gray-300">{frequency}</dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700">

@@ -121,6 +121,11 @@ select {
   .material-button:active {
     transform: translateY(0) scale(0.98);
   }
+
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -131,5 +136,11 @@ select {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-route-card {
+    max-width: calc(100vw - 3rem);
   }
 }

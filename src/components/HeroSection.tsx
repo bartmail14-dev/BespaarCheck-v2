@@ -45,7 +45,7 @@ export function HeroSection() {
     <section
       className="min-h-[88svh] flex items-center justify-center pt-24 pb-10 relative overflow-hidden transition-colors duration-700"
       style={{
-        background: isDark
+        backgroundImage: isDark
           ? 'linear-gradient(135deg, #070b1f 0%, #111b45 28%, #312e81 62%, #0f3f68 100%)'
           : 'linear-gradient(135deg, #00796b 0%, #00897b 45%, #2e7d32 100%)',
       }}
@@ -53,7 +53,7 @@ export function HeroSection() {
       <div
         className="absolute inset-0 transition-opacity duration-700"
         style={{
-          background: isDark
+          backgroundImage: isDark
             ? 'radial-gradient(circle at 18% 20%, rgba(124, 58, 237, 0.38) 0%, transparent 30%), radial-gradient(circle at 82% 14%, rgba(59, 130, 246, 0.34) 0%, transparent 28%), radial-gradient(circle at 72% 82%, rgba(20, 184, 166, 0.16) 0%, transparent 32%)'
             : 'radial-gradient(circle at 18% 20%, rgba(190, 242, 100, 0.16) 0%, transparent 30%), radial-gradient(circle at 82% 14%, rgba(45, 212, 191, 0.18) 0%, transparent 28%)',
         }}
@@ -70,15 +70,15 @@ export function HeroSection() {
       <div
         className="absolute inset-x-0 bottom-0 h-28 pointer-events-none transition-colors duration-700"
         style={{
-          background: isDark
+          backgroundImage: isDark
             ? 'linear-gradient(to top, rgba(15, 23, 42, 0.42), transparent)'
             : 'linear-gradient(to top, rgba(255, 255, 255, 0.1), transparent)',
         }}
       />
 
       <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 z-10">
-        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
-          <div className="text-center lg:text-left">
+        <div className="grid min-w-0 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
+          <div className="min-w-0 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 dark:border-violet-200/20 text-white/90 text-sm font-semibold mb-7 shadow-lg shadow-black/10 dark:shadow-violet-950/20">
               <Sparkles className="w-4 h-4 text-lime-200 dark:text-violet-200" />
               {text.chip}
@@ -87,7 +87,7 @@ export function HeroSection() {
         <h1
           className="font-bold text-white mb-7 tracking-tight material-title"
           style={{
-            fontSize: 'clamp(2.55rem, 8vw, 5.6rem)',
+            fontSize: 'clamp(2.35rem, 8vw, 5.6rem)',
             lineHeight: 1,
             textShadow: '0 8px 36px rgba(0, 0, 0, 0.28)',
           }}
@@ -95,9 +95,9 @@ export function HeroSection() {
           BespaarCheck
         </h1>
         <h2
-          className="font-medium text-white/90 mb-7 max-w-3xl mx-auto lg:mx-0"
+          className="mx-auto mb-7 max-w-[22rem] overflow-wrap-anywhere font-medium text-white/90 sm:max-w-3xl lg:mx-0"
           style={{
-            fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+            fontSize: 'clamp(1rem, 2.2vw, 1.75rem)',
             lineHeight: 1.3,
             textShadow: '0 4px 22px rgba(0, 0, 0, 0.22)',
           }}
@@ -107,13 +107,13 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p
-          className="text-white/90 mb-3 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+          className="mx-auto mb-3 max-w-[21rem] overflow-wrap-anywhere text-white/90 leading-relaxed sm:max-w-2xl lg:mx-0"
           style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)' }}
         >
           {text.intro}
         </p>
         <p
-          className="font-semibold mb-12"
+          className="mx-auto mb-12 max-w-[21rem] overflow-wrap-anywhere font-semibold sm:max-w-2xl lg:mx-0"
           style={{
             color: isDark ? '#c4b5fd' : '#bef264',
             fontSize: 'clamp(1rem, 2vw, 1.25rem)',
@@ -153,8 +153,8 @@ export function HeroSection() {
         </div>
           </div>
 
-          <div className="relative max-w-xl mx-auto lg:mx-0 w-full">
-            <div className="material-surface rounded-lg bg-white/92 dark:bg-slate-950/86 backdrop-blur-xl p-5 sm:p-6 border-white/35 dark:border-violet-300/20 dark:shadow-2xl dark:shadow-violet-950/30">
+          <div className="hero-route-card relative mx-auto w-full min-w-0 max-w-full sm:max-w-xl lg:mx-0">
+            <div className="material-surface w-full max-w-full overflow-hidden rounded-lg bg-white/92 dark:bg-slate-950/86 backdrop-blur-xl p-4 sm:p-6 border-white/35 dark:border-violet-300/20 dark:shadow-2xl dark:shadow-violet-950/30">
               <div className="flex items-start justify-between gap-4 pb-5 border-b border-gray-100 dark:border-indigo-900/50">
                 <div>
                   <p className="text-sm font-semibold text-emerald-700 dark:text-sky-300">{text.routeLabel}</p>
@@ -181,7 +181,7 @@ export function HeroSection() {
 
               <div className="mt-5 grid grid-cols-3 gap-2">
                 {text.badges.map((label) => (
-                  <div key={label} className="rounded-lg bg-emerald-50 dark:bg-violet-500/10 text-emerald-800 dark:text-violet-100 px-3 py-2 text-center text-xs font-bold border border-transparent dark:border-violet-300/20">
+                  <div key={label} className="rounded-lg bg-emerald-50 dark:bg-violet-500/10 text-emerald-800 dark:text-violet-100 px-2 sm:px-3 py-2 text-center text-xs font-bold border border-transparent dark:border-violet-300/20">
                     <CheckCircle2 className="w-4 h-4 mx-auto mb-1" />
                     {label}
                   </div>
