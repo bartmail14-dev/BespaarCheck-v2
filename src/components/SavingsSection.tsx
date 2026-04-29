@@ -294,6 +294,7 @@ export function SavingsSection() {
     ? {
         chip: 'Options',
         title: 'Energy-saving options',
+        compactTitle: 'Energy-saving options',
         intro: 'Discover which combinations make sense for your business. From quick optimisations to larger steps toward smart energy.',
         more: 'More information',
         cta: 'Calculate your saving',
@@ -312,6 +313,7 @@ export function SavingsSection() {
     : {
         chip: 'Mogelijkheden',
         title: 'Energiebesparingsmogelijkheden',
+        compactTitle: 'Energie besparen voor uw bedrijf',
         intro: 'Ontdek welke combinaties voor uw bedrijf logisch zijn. Van snelle optimalisaties tot grotere stappen richting slimme energie.',
         more: 'Meer informatie',
         cta: 'Bereken uw besparing',
@@ -362,41 +364,104 @@ export function SavingsSection() {
   }, [modalItem]);
 
   return (
-    <section id="savings" className="material-section bg-white dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <div className="material-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold mb-4">
-            <Zap className="w-4 h-4" />
-            {text.chip}
+    <section
+      id="savings"
+      className="relative overflow-hidden bg-slate-50 py-20 transition-colors duration-500 dark:bg-slate-950 sm:py-24 lg:py-28"
+    >
+      <div
+        className="absolute inset-0 opacity-80 dark:opacity-100"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 18% 8%, rgba(20, 184, 166, 0.14) 0%, transparent 30%), radial-gradient(circle at 86% 16%, rgba(0, 111, 186, 0.16) 0%, transparent 30%), radial-gradient(circle at 55% 95%, rgba(34, 197, 94, 0.12) 0%, transparent 34%)',
+        }}
+      />
+      <div
+        className="absolute inset-0 hidden dark:block"
+        style={{
+          backgroundImage:
+            'linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(17, 24, 58, 0.98) 46%, rgba(7, 47, 73, 0.92) 100%)',
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.05] dark:opacity-[0.09]"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23006fba' stroke-opacity='0.9'%3E%3Cpath d='M26 12v28M12 26h28'/%3E%3C/g%3E%3C/svg%3E\")",
+        }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+        <div className="mb-12 grid gap-8 lg:mb-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/75 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur dark:border-sky-300/20 dark:bg-white/8 dark:text-sky-100">
+              <Zap className="w-4 h-4" />
+              {text.chip}
+            </div>
+            <h2
+              className="material-title overflow-wrap-anywhere mt-5 max-w-3xl font-bold text-slate-950 dark:text-white"
+              style={{
+                fontSize: 'clamp(2rem, 8vw, 3.4rem)',
+                lineHeight: 1.08,
+              }}
+            >
+              <span className="xl:hidden">{text.compactTitle}</span>
+              <span className="hidden xl:inline">{text.title}</span>
+            </h2>
           </div>
-          <h2 className="material-title text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-            {text.title}
-          </h2>
-          <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            {text.intro}
-          </p>
+          <div className="rounded-lg border border-white/70 bg-white/74 p-5 shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-white/8 dark:shadow-black/30 sm:p-6">
+            <p className="text-base leading-8 text-slate-600 dark:text-slate-200 sm:text-lg">
+              {text.intro}
+            </p>
+            <div className="mt-5 grid grid-cols-1 gap-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-200 sm:grid-cols-3">
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-3 dark:border-emerald-300/15 dark:bg-emerald-400/10">
+                {isEnglish ? 'Fast wins' : 'Snelle winst'}
+              </div>
+              <div className="rounded-lg border border-sky-100 bg-sky-50 px-2 py-3 dark:border-sky-300/15 dark:bg-sky-400/10">
+                {isEnglish ? 'Smart mix' : 'Slimme mix'}
+              </div>
+              <div className="rounded-lg border border-violet-100 bg-violet-50 px-2 py-3 dark:border-violet-300/15 dark:bg-violet-400/10">
+                {isEnglish ? 'Optional' : 'Vrijblijvend'}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6 mb-14">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 lg:gap-5 mb-14">
           {items.map((item) => {
             const Icon = item.icon;
             const isExpanded = expandedId === item.id;
 
             return (
-              <div
+              <article
                 key={item.id}
-                className={`material-card group p-5 sm:p-6 transition-all duration-500 ${
-                  isExpanded ? 'md:col-span-2 xl:col-span-1 shadow-xl shadow-slate-900/10 dark:shadow-black/30' : ''
+                className={`group relative overflow-hidden rounded-lg border bg-white/82 p-5 shadow-lg shadow-slate-900/6 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 dark:bg-white/7 dark:shadow-black/25 ${
+                  isExpanded
+                    ? 'border-slate-200 shadow-2xl shadow-slate-900/12 dark:border-white/18 dark:shadow-black/40'
+                    : 'border-white/80 dark:border-white/10'
                 }`}
+                style={{
+                  backgroundImage: isExpanded
+                    ? `linear-gradient(135deg, ${item.color}12 0%, transparent 66%)`
+                    : undefined,
+                }}
               >
-                {/* Icon and Chevron Row */}
-                <div className="flex items-start justify-between mb-5">
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-1 opacity-90"
+                  style={{
+                    backgroundImage: `linear-gradient(90deg, ${item.color}, ${item.color}66, transparent)`,
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-70"
+                  style={{ backgroundColor: `${item.color}28` }}
+                />
+
+                <div className="relative flex items-start justify-between gap-5">
                   <div
-                    className="w-14 h-14 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-0.5"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-transform duration-300 group-hover:-translate-y-0.5 dark:border-white/10"
                     style={{
-                      backgroundColor: `${item.color}17`,
+                      backgroundImage: `linear-gradient(135deg, ${item.color}1f, ${item.color}0c)`,
+                      borderColor: `${item.color}22`,
                       color: item.color,
                     }}
                   >
@@ -404,30 +469,28 @@ export function SavingsSection() {
                   </div>
                   <button
                     onClick={() => setExpandedId(isExpanded ?null : item.id)}
-                    className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-all"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/8 dark:text-slate-300 dark:hover:bg-white/14"
                     aria-label={`${isExpanded ? text.close : text.open} ${item.title}`}
                     aria-expanded={isExpanded}
                     aria-controls={`savings-details-${item.id}`}
                   >
                     <ChevronDown
-                      className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-300 ${
+                      className={`w-5 h-5 transition-transform duration-300 ${
                         isExpanded ?'rotate-180' : ''
                       }`}
                     />
                   </button>
                 </div>
 
-                {/* Title */}
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  {item.title}
-                </h3>
+                <div className="relative mt-6">
+                  <h3 className="text-xl font-bold text-slate-950 dark:text-white">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 min-h-[3rem] text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {item.description}
+                  </p>
+                </div>
 
-                {/* Description */}
-                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                  {item.description}
-                </p>
-
-                {/* Expanded Details */}
                 <div
                   id={`savings-details-${item.id}`}
                   className={`overflow-hidden transition-all duration-500 ease-out ${
@@ -435,45 +498,46 @@ export function SavingsSection() {
                   }`}
                 >
                   <div
-                    className="rounded-lg relative overflow-hidden border bg-white dark:bg-gray-900"
+                    className="relative overflow-hidden rounded-lg border bg-white/92 shadow-inner dark:bg-slate-950/60"
                     style={{
-                      borderColor: `${item.color}22`,
+                      borderColor: `${item.color}30`,
                     }}
                   >
                     <div
                       className="h-1 w-full"
                       style={{ backgroundImage: `linear-gradient(90deg, ${item.color}, ${item.color}88)` }}
                     />
-                    <div className="p-5">
+                    <div className="p-4 sm:p-5">
                       <div className="flex items-start gap-3">
                         <div
-                          className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
+                          className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border dark:border-white/10"
                           style={{
                             backgroundColor: `${item.color}14`,
+                            borderColor: `${item.color}18`,
                             color: item.color,
                           }}
                         >
                           <Sparkles className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                             {text.why}
                           </p>
-                          <p className="mt-1 text-sm leading-6 text-gray-700 dark:text-gray-200">
+                          <p className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-200">
                             {item.details}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-5">
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+                        <p className="mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
                           {text.quickBenefits}
                         </p>
                         <div className="grid gap-2">
                           {item.extendedInfo.benefits.slice(0, 3).map((benefit, index) => (
                             <div
                               key={benefit}
-                              className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm leading-5 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                              className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm leading-5 text-slate-700 dark:border-white/8 dark:bg-white/6 dark:text-slate-200"
                               style={{
                                 animation: `fadeSlideIn 0.28s ease-out ${index * 0.05}s both`,
                               }}
@@ -489,7 +553,7 @@ export function SavingsSection() {
                       </div>
 
                       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                           <ShieldCheck className="h-4 w-4" style={{ color: item.color }} />
                           <span>
                             {item.extendedInfo.sources.length} {text.sourceCount}
@@ -511,16 +575,15 @@ export function SavingsSection() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
 
-        {/* CTA Button */}
         <div className="text-center">
           <a
             href="#calculator"
-            className="material-button inline-flex items-center gap-2 px-8 py-4 bg-emerald-700 dark:bg-emerald-600 hover:bg-emerald-800 dark:hover:bg-emerald-700 text-white font-semibold"
+            className="material-button inline-flex items-center gap-2 bg-emerald-700 px-8 py-4 font-semibold text-white shadow-xl shadow-emerald-900/15 hover:bg-emerald-800 dark:bg-sky-500 dark:shadow-sky-950/30 dark:hover:bg-sky-400"
           >
             {text.cta}
             <ArrowRight className="w-5 h-5" />
