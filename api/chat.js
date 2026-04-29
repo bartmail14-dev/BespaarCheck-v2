@@ -100,6 +100,23 @@ function buildSystemPrompt(req) {
   return `${frontendPrompt || SERVER_PROMPT}\n\nWebsitekennis:\n${context}`;
 }
 
+function buildFallbackReply(req) {
+  const context = String(req.body?.context || '').slice(0, 1200).trim();
+  const lowerContext = context.toLowerCase();
+  const hasSavings = lowerContext.includes('besparing') || lowerContext.includes('saving');
+  const hasRules = lowerContext.includes('regelgeving') || lowerContext.includes('rvo') || lowerContext.includes('verplichting');
+
+  if (hasRules) {
+    return 'Ik kan u hier alvast praktisch in meenemen. Bij regelgeving hangt veel af van uw verbruik, gebouw, installaties en situatie als huurder of eigenaar. BespaarCheck geeft daarom een eerste richting en blijft volledig vrijblijvend. Wilt u vooral weten of u onder een verplichting valt, of wilt u eerst de besparingskansen bekijken?';
+  }
+
+  if (hasSavings) {
+    return 'Er lijken zeker aanknopingspunten te zijn om slimmer naar energieverbruik en kosten te kijken. BespaarCheck kijkt indicatief naar verbruik, gebouwtype en mogelijke maatregelen zoals zonnepanelen, warmtepomp, laadpalen, opslag en energiemanagement. Alles is vrijblijvend en u zit nergens aan vast. Wat voor bedrijfspand wilt u bekijken?';
+  }
+
+  return 'Ik help u graag op weg. BespaarCheck geeft een vrijblijvende eerste indruk van energiebesparing, relevante maatregelen en aandachtspunten rond regelgeving. Er gebeurt niets automatisch en u zit nergens aan vast. Wat voor bedrijfspand wilt u slimmer maken?';
+}
+
 async function requestOpenAI({ apiKey, model, systemPrompt, messages }) {
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -162,8 +179,11 @@ async function requestGemini({ apiKey, model, systemPrompt, messages }) {
         },
         contents: mapGeminiMessages(messages),
         generationConfig: {
-          maxOutputTokens: 650,
+          maxOutputTokens: 4096,
           temperature: 0.55,
+          thinkingConfig: {
+            thinkingBudget: 512,
+          },
         },
       }),
     }
@@ -212,7 +232,7 @@ export default async function handler(req, res) {
     if (provider === 'gemini' || provider === 'google') {
       const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       if (!apiKey) {
-        return res.status(503).json({ error: 'GEMINI_API_KEY is not configured' });
+      return res.status(200).json({ reply: buildFallbackReply(req), fallback: true });
       }
       result = await requestGemini({
         apiKey,
@@ -223,7 +243,7 @@ export default async function handler(req, res) {
     } else {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        return res.status(503).json({ error: 'OPENAI_API_KEY is not configured' });
+      return res.status(200).json({ reply: buildFallbackReply(req), fallback: true });
       }
       result = await requestOpenAI({
         apiKey,
@@ -234,16 +254,18 @@ export default async function handler(req, res) {
     }
 
     if (result.error) {
-      return res.status(result.status || 502).json({ error: result.error });
+      console.warn('BespaarCheck chat model returned an error:', result.error);
+      return res.status(200).json({ reply: buildFallbackReply(req), fallback: true });
     }
 
     if (!result.reply) {
-      return res.status(502).json({ error: 'No text returned by model' });
+      console.warn('BespaarCheck chat model returned no text');
+      return res.status(200).json({ reply: buildFallbackReply(req), fallback: true });
     }
 
     return res.status(200).json({ reply: result.reply });
   } catch (error) {
     console.error('BespaarCheck chat error:', error);
-    return res.status(500).json({ error: 'Chat request failed' });
+    return res.status(200).json({ reply: buildFallbackReply(req), fallback: true });
   }
 }

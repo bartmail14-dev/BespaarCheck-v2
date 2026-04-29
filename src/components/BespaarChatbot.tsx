@@ -22,7 +22,7 @@ const chatCopy = {
     close: 'Sluit chat',
     thinking: 'Check denkt mee...',
     unavailable:
-      'Ik kan nu geen verbinding maken met de chatbot. U kunt natuurlijk wel direct contact opnemen via info@bespaarcheck.net.',
+      'Ik kan tijdelijk minder diep meedenken, maar help u graag op weg. BespaarCheck is volledig vrijblijvend en u zit nergens aan vast. Wat voor bedrijfspand wilt u slimmer maken?',
     followUpTitle: 'Vrijblijvend laten opvolgen?',
     followUpBody:
       'Klik alleen als u deze contactvraag naar BespaarCheck wilt sturen. Het is vrijblijvend en u zit nergens aan vast.',
@@ -53,7 +53,7 @@ const chatCopy = {
     close: 'Close chat',
     thinking: 'Check is thinking along...',
     unavailable:
-      'I cannot connect to the chatbot right now. You can still contact us directly at info@bespaarcheck.net.',
+      'I can temporarily think along less deeply, but I can still help you get started. BespaarCheck is fully non-binding and you are not committed to anything. What kind of business premises would you like to make smarter?',
     followUpTitle: 'Follow up without obligation?',
     followUpBody:
       'Only click if you want to send this contact request to BespaarCheck. It is non-binding and you are not committed to anything.',
