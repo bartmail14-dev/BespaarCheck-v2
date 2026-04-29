@@ -1793,34 +1793,36 @@ export function CalculatorSection() {
 
                     {/* Step 6: Contact */}
                     {currentStep === 6 && (
-                      <div>
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="w-12 h-12 rounded-lg bg-teal-500 flex items-center justify-center">
-                            <Mail className="w-6 h-6 text-white" />
+                      <div className="mx-auto max-w-2xl">
+                        <div className="mb-5 rounded-lg border border-teal-100 bg-white p-4 shadow-sm dark:border-teal-900/60 dark:bg-gray-900 sm:p-5">
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-teal-500 shadow-lg shadow-teal-500/20">
+                              <Mail className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-xl font-bold leading-tight text-gray-900 dark:text-white">{t.contactTitle}</h3>
+                              <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{t.contactIntro}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.contactTitle}</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.contactIntro}</p>
+
+                          <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 p-4 dark:border-teal-800 dark:bg-teal-950/30">
+                            <p className="flex items-start gap-3 text-sm leading-6 text-gray-700 dark:text-gray-300">
+                              <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-teal-500" />
+                              <span>{t.contactBox}</span>
+                            </p>
                           </div>
                         </div>
 
-                        <div className="p-5 rounded-lg bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 mb-6">
-                          <p className="text-gray-700 dark:text-gray-300 text-sm flex items-start gap-3">
-                            <Sparkles className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
-                            <span>
-                              {t.contactBox}
-                            </span>
-                          </p>
-                        </div>
-
-                        <div className="space-y-4">
+                        <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-4">
                           {/* Name */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                               {t.name} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <div className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-gray-800">
+                                <User className="h-5 w-5" />
+                              </div>
                               <input
                                 type="text"
                                 value={formData.contactName}
@@ -1833,7 +1835,7 @@ export function CalculatorSection() {
                                   });
                                 }}
                                 placeholder="Jan Jansen"
-                                className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                                className={`min-h-[56px] w-full rounded-lg border bg-gray-50 py-3 pl-14 pr-4 text-base text-gray-900 outline-none transition-all placeholder-gray-400 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 ${
                                   formErrors.contactName
                                     ?'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
                                     : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
@@ -1850,28 +1852,32 @@ export function CalculatorSection() {
 
                           {/* Company */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                               {t.company}
                             </label>
                             <div className="relative">
-                              <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <div className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-gray-800">
+                                <Building className="h-5 w-5" />
+                              </div>
                               <input
                                 type="text"
                                 value={formData.companyName}
                                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                                 placeholder="Uw Bedrijf B.V."
-                                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900 transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                className="min-h-[56px] w-full rounded-lg border border-gray-200 bg-gray-50 py-3 pl-14 pr-4 text-base text-gray-900 outline-none transition-all placeholder-gray-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:ring-teal-900"
                               />
                             </div>
                           </div>
 
                           {/* Email */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                               {t.email} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                              <div className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-gray-50 text-gray-400 dark:bg-gray-800">
+                                <Mail className="h-5 w-5" />
+                              </div>
                               <input
                                 type="email"
                                 value={formData.email}
@@ -1884,7 +1890,7 @@ export function CalculatorSection() {
                                   });
                                 }}
                                 placeholder="jan@uwbedrijf.nl"
-                                className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                                className={`min-h-[56px] w-full rounded-lg border bg-gray-50 py-3 pl-14 pr-4 text-base text-gray-900 outline-none transition-all placeholder-gray-400 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 ${
                                   formErrors.email
                                     ?'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
                                     : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
@@ -1913,8 +1919,8 @@ export function CalculatorSection() {
                           />
                         </div>
 
-                        <div className="mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                          <p className="text-gray-500 dark:text-gray-400 text-xs text-center">
+                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                          <p className="text-center text-xs leading-5 text-gray-500 dark:text-gray-400">
                             {t.privacy}
                           </p>
                         </div>
