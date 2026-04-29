@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Car, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, RefreshCw, Send, AlertCircle, Check } from 'lucide-react';
+import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, RefreshCw, Send, AlertCircle, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // Energie prijzen interface
 interface EnergyPrices {
@@ -11,10 +12,10 @@ interface EnergyPrices {
   isLive: boolean;
 }
 
-// Default prijzen als fallback
+// Default zakelijke prijzen als fallback (ex BTW, inc energiebelasting + leveringskosten)
 const DEFAULT_PRICES: EnergyPrices = {
-  electricity: 0.28,
-  gas: 1.25,
+  electricity: 0.16, // €/kWh zakelijk MKB kleinverbruik (inc leveringskosten, ex BTW)
+  gas: 0.55, // €/m³ zakelijk MKB kleinverbruik (inc leveringskosten, ex BTW)
   feedInTariff: 0.07,
   lastUpdated: null,
   isLive: false,
@@ -24,19 +25,21 @@ const DEFAULT_PRICES: EnergyPrices = {
 async function fetchEnergyPrices(): Promise<EnergyPrices> {
   try {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setDate(today.getDate() + 1);
 
-    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+    const formatDate = (d: Date) => encodeURIComponent(d.toISOString());
 
-    // Fetch elektriciteit prijzen (usageType=1 voor elektra)
+    // EnergyZero API levert EPEX spotprijzen (ex BTW) of inc BTW
+    // We halen ZONDER BTW op (inclBtw=false) → dit zijn kale spotprijzen
     const elecResponse = await fetch(
-      `https://api.energyzero.nl/v1/energyprices?fromDate=${formatDate(today)}&tillDate=${formatDate(tomorrow)}&interval=4&usageType=1&inclBtw=true`
+      `https://api.energyzero.nl/v1/energyprices?fromDate=${formatDate(today)}&tillDate=${formatDate(tomorrow)}&interval=4&usageType=1&inclBtw=false`
     );
 
-    // Fetch gas prijzen (usageType=3 voor gas)
     const gasResponse = await fetch(
-      `https://api.energyzero.nl/v1/energyprices?fromDate=${formatDate(today)}&tillDate=${formatDate(tomorrow)}&interval=4&usageType=3&inclBtw=true`
+      `https://api.energyzero.nl/v1/energyprices?fromDate=${formatDate(today)}&tillDate=${formatDate(tomorrow)}&interval=4&usageType=3&inclBtw=false`
     );
 
     if (!elecResponse.ok || !gasResponse.ok) {
@@ -46,29 +49,39 @@ async function fetchEnergyPrices(): Promise<EnergyPrices> {
     const elecData = await elecResponse.json();
     const gasData = await gasResponse.json();
 
-    // Bereken gemiddelde prijs van vandaag
     const elecPrices = elecData.Prices || [];
     const gasPrices = gasData.Prices || [];
 
-    const avgElec = elecPrices.length > 0
-      ? elecPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / elecPrices.length
+    if (elecPrices.length === 0 && gasPrices.length === 0) {
+      throw new Error('Geen prijsdata beschikbaar');
+    }
+
+    // Spotprijzen (ex BTW) → zakelijke all-in prijs
+    // Zakelijk = spotprijs + energiebelasting + opslagen (leveringskosten, netbeheer indicatief)
+    const avgElecSpot = elecPrices.length > 0
+      ?elecPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / elecPrices.length
+      : null;
+
+    const avgGasSpot = gasPrices.length > 0
+      ?gasPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / gasPrices.length
+      : null;
+
+    // Zakelijke all-in = spotprijs + EB zakelijk (~€0.01/kWh elektra, ~€0.50/m³ gas)
+    //                   + indicatieve leveringsopslag (~€0.03/kWh, ~€0.08/m³)
+    const zakelijkElec = avgElecSpot !== null
+      ?Math.max(avgElecSpot + 0.01 + 0.03, 0.08)
       : DEFAULT_PRICES.electricity;
 
-    const avgGas = gasPrices.length > 0
-      ? gasPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / gasPrices.length
+    const zakelijkGas = avgGasSpot !== null
+      ?Math.max(avgGasSpot + 0.50 + 0.08, 0.35)
       : DEFAULT_PRICES.gas;
-
-    // Zakelijke tarieven zijn exclusief BTW, dus we moeten BTW eraf halen voor zakelijk
-    // en energiebelasting toevoegen (indicatief)
-    const zakelijkElec = avgElec * 0.79 + 0.05; // -21% BTW, +€0.05 energiebelasting zakelijk
-    const zakelijkGas = avgGas * 0.79 + 0.15; // -21% BTW, +€0.15 energiebelasting zakelijk
 
     return {
       electricity: Math.round(zakelijkElec * 1000) / 1000,
       gas: Math.round(zakelijkGas * 1000) / 1000,
-      feedInTariff: 0.07, // Teruglevertarief is relatief stabiel
+      feedInTariff: 0.07,
       lastUpdated: new Date(),
-      isLive: true,
+      isLive: avgElecSpot !== null || avgGasSpot !== null,
     };
   } catch (error) {
     console.warn('Kon energieprijzen niet ophalen, gebruik defaults:', error);
@@ -86,6 +99,16 @@ const baseSteps = [
   { id: 6, label: 'Contact', icon: Mail },
 ];
 
+const baseStepsEn = [
+  { id: 1, label: 'Business', icon: Building2 },
+  { id: 2, label: 'Usage', icon: Zap },
+  { id: 3, label: 'Systems', icon: Sun },
+  { id: 'solar', label: 'Feed-in', icon: ArrowDownUp, conditional: true },
+  { id: 4, label: 'Contract', icon: Euro },
+  { id: 5, label: 'Priorities', icon: Users },
+  { id: 6, label: 'Contact', icon: Mail },
+];
+
 const businessTypes = [
   { value: '', label: 'Selecteer type...' },
   { value: 'retail', label: 'Retail / Winkel' },
@@ -97,6 +120,17 @@ const businessTypes = [
   { value: 'other', label: 'Anders' },
 ];
 
+const businessTypesEn = [
+  { value: '', label: 'Select type...' },
+  { value: 'retail', label: 'Retail / shop' },
+  { value: 'office', label: 'Office' },
+  { value: 'warehouse', label: 'Warehouse / logistics' },
+  { value: 'production', label: 'Production / industry' },
+  { value: 'hospitality', label: 'Hospitality' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'other', label: 'Other' },
+];
+
 const businessRanges: Record<string, {
   buildingSize: { min: number; max: number; default: number; step: number };
   electricity: { min: number; max: number; default: number; step: number };
@@ -105,17 +139,17 @@ const businessRanges: Record<string, {
   '': { buildingSize: { min: 50, max: 5000, default: 500, step: 50 }, electricity: { min: 2500, max: 500000, default: 25000, step: 2500 }, gas: { min: 0, max: 100000, default: 10000, step: 500 } },
   retail: { buildingSize: { min: 25, max: 2000, default: 150, step: 25 }, electricity: { min: 2500, max: 150000, default: 15000, step: 2500 }, gas: { min: 0, max: 30000, default: 5000, step: 500 } },
   office: { buildingSize: { min: 50, max: 5000, default: 300, step: 50 }, electricity: { min: 2500, max: 300000, default: 25000, step: 2500 }, gas: { min: 0, max: 50000, default: 8000, step: 500 } },
-  warehouse: { buildingSize: { min: 200, max: 25000, default: 2000, step: 100 }, electricity: { min: 5000, max: 750000, default: 75000, step: 5000 }, gas: { min: 0, max: 150000, default: 20000, step: 1000 } },
-  production: { buildingSize: { min: 500, max: 50000, default: 3000, step: 250 }, electricity: { min: 25000, max: 2000000, default: 250000, step: 10000 }, gas: { min: 5000, max: 500000, default: 50000, step: 2500 } },
+  warehouse: { buildingSize: { min: 200, max: 10000, default: 2000, step: 100 }, electricity: { min: 5000, max: 500000, default: 75000, step: 5000 }, gas: { min: 0, max: 100000, default: 20000, step: 1000 } },
+  production: { buildingSize: { min: 500, max: 15000, default: 3000, step: 250 }, electricity: { min: 25000, max: 1000000, default: 250000, step: 10000 }, gas: { min: 5000, max: 250000, default: 50000, step: 2500 } },
   hospitality: { buildingSize: { min: 50, max: 1500, default: 150, step: 25 }, electricity: { min: 5000, max: 200000, default: 30000, step: 2500 }, gas: { min: 2500, max: 75000, default: 15000, step: 500 } },
-  healthcare: { buildingSize: { min: 100, max: 15000, default: 1000, step: 100 }, electricity: { min: 25000, max: 1000000, default: 100000, step: 5000 }, gas: { min: 5000, max: 200000, default: 30000, step: 1000 } },
+  healthcare: { buildingSize: { min: 100, max: 5000, default: 500, step: 100 }, electricity: { min: 5000, max: 500000, default: 50000, step: 5000 }, gas: { min: 2500, max: 100000, default: 15000, step: 1000 } },
   other: { buildingSize: { min: 25, max: 10000, default: 300, step: 25 }, electricity: { min: 2500, max: 500000, default: 25000, step: 2500 }, gas: { min: 0, max: 100000, default: 10000, step: 500 } },
 };
 
-// CO2 emissiefactoren
+// CO2 emissiefactoren (bron: RVO/CBS 2025)
 const CO2_FACTORS = {
-  electricity: 0.4, // kg CO2/kWh (NL grid mix)
-  gas: 1.8, // kg CO2/m³
+  electricity: 0.33, // kg CO2/kWh (NL grid mix 2025, meer wind/zon)
+  gas: 1.8, // kg CO2/m³ (standaard emissiefactor aardgas)
 };
 
 // Sector-specifieke energieprofielen (% van totaal elektriciteitsverbruik)
@@ -127,11 +161,11 @@ const SECTOR_PROFILES: Record<string, {
   peakLoadFactor: number; // Hoe goed ze kunnen profiteren van dynamische prijzen
 }> = {
   retail: { lighting: 0.35, cooling: 0.20, heating: 0.15, equipment: 0.30, peakLoadFactor: 0.6 },
-  office: { lighting: 0.30, cooling: 0.25, heating: 0.20, equipment: 0.25, peakLoadFactor: 0.4 },
-  warehouse: { lighting: 0.40, cooling: 0.10, heating: 0.25, equipment: 0.25, peakLoadFactor: 0.7 },
+  office: { lighting: 0.30, cooling: 0.20, heating: 0.20, equipment: 0.30, peakLoadFactor: 0.4 },
+  warehouse: { lighting: 0.25, cooling: 0.10, heating: 0.25, equipment: 0.40, peakLoadFactor: 0.7 },
   production: { lighting: 0.15, cooling: 0.15, heating: 0.20, equipment: 0.50, peakLoadFactor: 0.5 },
-  hospitality: { lighting: 0.25, cooling: 0.30, heating: 0.25, equipment: 0.20, peakLoadFactor: 0.3 },
-  healthcare: { lighting: 0.20, cooling: 0.25, heating: 0.30, equipment: 0.25, peakLoadFactor: 0.2 },
+  hospitality: { lighting: 0.20, cooling: 0.25, heating: 0.20, equipment: 0.35, peakLoadFactor: 0.3 },
+  healthcare: { lighting: 0.20, cooling: 0.25, heating: 0.25, equipment: 0.30, peakLoadFactor: 0.2 },
   other: { lighting: 0.25, cooling: 0.20, heating: 0.25, equipment: 0.30, peakLoadFactor: 0.5 },
 };
 
@@ -139,48 +173,47 @@ const SECTOR_PROFILES: Record<string, {
 const SAVINGS_MEASURES = {
   led: {
     name: 'LED-verlichting',
-    savingsPercent: 0.60, // 60% besparing op verlichting
-    investmentPerM2: 12, // €/m²
+    savingsPercent: 0.55, // 55% besparing op verlichting (TL → LED retrofit)
+    investmentPerM2: 10, // €/m² (retrofit, hergebruik armaturen)
     lifespan: 15,
   },
   solar: {
     name: 'Zonnepanelen',
-    kWhPerKwp: 900, // kWh opbrengst per kWp per jaar in NL
-    costPerKwp: 1000, // € per kWp geïnstalleerd
-    roofFactorPerM2: 0.15, // kWp per m² dakoppervlak (≈ 60% van vloeroppervlak bruikbaar)
+    kWhPerKwp: 875, // kWh opbrengst per kWp per jaar in NL (rekening houdend met degradatie)
+    costPerKwp: 1100, // € per kWp geïnstalleerd (zakelijk, inc montage)
+    roofFactorPerM2: 0.12, // kWp per m² dakoppervlak (≈ 50% van vloer bruikbaar, niet elk dak geschikt)
     lifespan: 25,
   },
   heatpump: {
     name: 'Warmtepomp',
-    cop: 4, // Coefficient of Performance
-    gasSavingsPercent: 0.85, // Vervangt 85% van gasverbruik
-    electricityIncrease: 0.25, // Maar verhoogt elektriciteit
-    baseCost: 15000,
-    costPerM2: 30,
+    cop: 3.5,
+    gasSavingsPercent: 0.80,
+    electricityIncrease: 0.25,
+    baseCost: 18000,
+    costPerM2: 35,
+    maxInvestment: 120000, // Cap: grotere panden hebben complexere maar niet lineair duurdere systemen
+    maxBuildingSize: 3000, // Boven 3000m² is een enkele warmtepomp niet realistisch
     lifespan: 20,
   },
   ems: {
     name: 'Energiemanagementsysteem',
-    savingsPercent: 0.12, // 12% totale besparing
-    baseCost: 3000,
-    costPerM2: 5,
+    savingsPercent: 0.08,
+    baseCost: 4000,
+    costPerM2: 6,
+    maxInvestment: 40000, // Cap voor EMS
     lifespan: 10,
   },
-  insulation: {
-    name: 'Isolatie verbetering',
-    heatingSavingsPercent: 0.30,
-    costPerM2: 45,
-    lifespan: 30,
-  },
   smartThermostat: {
-    name: 'Slimme thermostaat',
-    heatingSavingsPercent: 0.12,
-    baseCost: 500,
+    name: 'Slimme klimaatregeling',
+    heatingSavingsPercent: 0.10,
+    baseCost: 600,
+    costPerM2: 2, // Schaalt mee met gebouwgrootte (meer zones = meer thermostaten)
+    maxInvestment: 5000,
     lifespan: 10,
   },
   dynamicContract: {
     name: 'Dynamisch energiecontract',
-    savingsPercent: 0.15, // Basis 15%, aangepast op sector
+    savingsPercent: 0.10, // 10% basis, afhankelijk van flexibiliteit
   },
 };
 
@@ -208,6 +241,7 @@ interface CalculationResult {
 
 export function CalculatorSection() {
   const { isDark } = useTheme();
+  const { isEnglish } = useLanguage();
   const [currentStep, setCurrentStep] = useState<number | 'solar'>(1);
   const [isCalculating, setIsCalculating] = useState(false);
   const [calculationPhase, setCalculationPhase] = useState(0);
@@ -225,17 +259,141 @@ export function CalculatorSection() {
     contactName: '',
     companyName: '',
     email: '',
+    honeypot: '',
   });
   const [activeDropdown, setActiveDropdown] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [energyPrices, setEnergyPrices] = useState<EnergyPrices>(DEFAULT_PRICES);
-  const [, setIsLoadingPrices] = useState(true);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const businessOptions = isEnglish ? businessTypesEn : businessTypes;
+  const stepOptions = isEnglish ? baseStepsEn : baseSteps;
+  const t = isEnglish
+    ? {
+        chip: 'Instant insight',
+        title: 'Calculate your saving',
+        intro: 'Discover what you can save right away. The check is free, completely non-binding and does not commit you to anything.',
+        loadingPrices: 'Loading energy prices...',
+        phases: ['Analysing...', 'Calculating...', 'Optimising...', 'Finishing...'],
+        resultsTitle: 'Your savings analysis',
+        resultsSubtitle: 'Based on current energy prices and your business profile',
+        currentCosts: 'Your estimated current energy costs',
+        electricity: 'electricity',
+        livePrices: 'Live prices',
+        indicativePrices: 'Indicative prices',
+        potentialSaving: 'Potential saving',
+        co2Reduction: 'CO2 reduction',
+        payback: 'Avg. payback time',
+        year: 'year',
+        newCalculation: 'New calculation',
+        disclaimer: 'This is an indicative calculation. Actual savings may differ and depend on specific circumstances.',
+        businessTitle: 'Tell us about your business',
+        businessIntro: 'We tailor the analysis to your sector',
+        businessType: 'Business type',
+        selectType: 'Select type...',
+        buildingSize: 'Business premises size',
+        usageTitle: 'Your energy use',
+        usageIntro: 'This helps us calculate the saving',
+        electricityUsage: 'Electricity use',
+        gasUsage: 'Gas use',
+        perYear: 'per year',
+        systemsTitle: 'Current systems',
+        systemsIntro: 'Select what you already have installed',
+        noSystems: 'No systems? No problem. We will analyse all possibilities',
+        feedTitle: 'Solar panel feed-in',
+        feedIntro: 'How much electricity do you feed back into the grid?',
+        annualFeed: 'Annual feed-in',
+        tip: 'Tip:',
+        feedTip: 'Feed-in is the electricity your solar panels produce but that you do not use yourself. It is sent back to the electricity grid.',
+        quickSelect: 'Quick select:',
+        contractTitle: 'Your energy contract',
+        contractIntro: 'Select your current contract type',
+        recommended: 'Recommended',
+        dynamicNote: 'Dynamic rates can deliver up to',
+        dynamicNoteStrong: '30% extra saving',
+        prioritiesTitle: 'What matters to you?',
+        prioritiesIntro: 'We rank the recommendations based on your choice',
+        prioritiesNote: 'The order of recommendations is aligned with your priorities',
+        contactTitle: 'Create your report',
+        contactIntro: 'View your analysis immediately and optionally prepare a non-binding request',
+        contactBox: 'After entering your details, you immediately see a personal savings report with concrete recommendations and an indication of your savings potential. 100% free and non-binding; you are not committed to anything.',
+        name: 'Your name',
+        company: 'Company name',
+        email: 'Email address',
+        privacy: 'Your details are currently only used to prepare the report and email request. Final sending runs through your own email program and does not create an agreement.',
+        previous: 'Previous',
+        next: 'Next',
+        calculate: 'Calculate saving',
+        preparing: 'Preparing...',
+        prepareRequest: 'Prepare non-binding request',
+        mailOpened: 'Your email program opened with the analysis. Sending is non-binding and does not commit you to anything.',
+        mailError: 'Something went wrong while opening your email program. Email directly to',
+      }
+    : {
+        chip: 'Direct inzicht',
+        title: 'Bereken uw besparing',
+        intro: 'Ontdek direct wat u kunt besparen. De check is gratis, geheel vrijblijvend en verplicht u tot niets.',
+        loadingPrices: 'Energieprijzen laden...',
+        phases: ['Analyseren...', 'Berekenen...', 'Optimaliseren...', 'Afronden...'],
+        resultsTitle: 'Uw besparingsanalyse',
+        resultsSubtitle: 'Gebaseerd op actuele energieprijzen en uw bedrijfsprofiel',
+        currentCosts: 'Uw geschatte huidige energiekosten',
+        electricity: 'elektra',
+        livePrices: 'Live prijzen',
+        indicativePrices: 'Indicatieve prijzen',
+        potentialSaving: 'Potentiele besparing',
+        co2Reduction: 'CO2 reductie',
+        payback: 'Gem. terugverdientijd',
+        year: 'jaar',
+        newCalculation: 'Nieuwe berekening',
+        disclaimer: 'Dit is een indicatieve berekening. Werkelijke besparingen kunnen afwijken en zijn afhankelijk van specifieke omstandigheden.',
+        businessTitle: 'Vertel ons over uw bedrijf',
+        businessIntro: 'We stemmen de analyse af op uw sector',
+        businessType: 'Bedrijfstype',
+        selectType: 'Selecteer type...',
+        buildingSize: 'Bedrijfspand grootte',
+        usageTitle: 'Uw energieverbruik',
+        usageIntro: 'Dit helpt ons de besparing te berekenen',
+        electricityUsage: 'Elektriciteitsverbruik',
+        gasUsage: 'Gasverbruik',
+        perYear: 'jaar',
+        systemsTitle: 'Huidige installaties',
+        systemsIntro: 'Selecteer wat u al heeft geinstalleerd',
+        noSystems: 'Geen installaties? Geen probleem. We analyseren alle mogelijkheden',
+        feedTitle: 'Teruglevering zonnepanelen',
+        feedIntro: 'Hoeveel levert u terug aan het net?',
+        annualFeed: 'Jaarlijkse teruglevering',
+        tip: 'Tip:',
+        feedTip: 'Teruglevering is de stroom die uw zonnepanelen produceren maar die u niet zelf verbruikt. Dit wordt teruggeleverd aan het elektriciteitsnet.',
+        quickSelect: 'Snelle selectie:',
+        contractTitle: 'Uw energiecontract',
+        contractIntro: 'Selecteer uw huidige contractvorm',
+        recommended: 'Aanbevolen',
+        dynamicNote: 'Dynamische tarieven kunnen tot',
+        dynamicNoteStrong: '30% extra besparing',
+        prioritiesTitle: 'Wat is belangrijk voor u?',
+        prioritiesIntro: 'We rangschikken de aanbevelingen op basis van uw keuze',
+        prioritiesNote: 'De volgorde van aanbevelingen wordt afgestemd op uw prioriteiten',
+        contactTitle: 'Maak uw rapport',
+        contactIntro: 'Bekijk direct uw analyse en zet desgewenst een vrijblijvende aanvraag klaar',
+        contactBox: 'Na het invullen ziet u direct een persoonlijk besparingsrapport met concrete aanbevelingen en een indicatie van uw besparingspotentieel. 100% gratis en vrijblijvend; u zit nergens aan vast.',
+        name: 'Uw naam',
+        company: 'Bedrijfsnaam',
+        email: 'E-mailadres',
+        privacy: 'Uw gegevens worden nu alleen gebruikt om het rapport en de e-mailaanvraag voor te bereiden. De definitieve verzending loopt via uw eigen e-mailprogramma en leidt niet tot een overeenkomst.',
+        previous: 'Vorige',
+        next: 'Volgende',
+        calculate: 'Bereken besparing',
+        preparing: 'Voorbereiden...',
+        prepareRequest: 'Zet vrijblijvende aanvraag klaar',
+        mailOpened: 'Uw e-mailprogramma is geopend met de analyse. Versturen is vrijblijvend en verplicht u tot niets.',
+        mailError: 'Er ging iets mis bij het openen van uw e-mailprogramma. Mail rechtstreeks naar',
+      };
 
   // Fetch energy prices on mount
   useEffect(() => {
@@ -251,8 +409,8 @@ export function CalculatorSection() {
   // Dynamic steps based on solar panel selection
   const hasSolarPanels = formData.existingInstallations.includes('solar');
   const steps = useMemo(() => {
-    return baseSteps.filter(step => !step.conditional || (step.id === 'solar' && hasSolarPanels));
-  }, [hasSolarPanels]);
+    return stepOptions.filter(step => !step.conditional || (step.id === 'solar' && hasSolarPanels));
+  }, [hasSolarPanels, stepOptions]);
 
   const currentRanges = businessRanges[formData.businessType] || businessRanges[''];
 
@@ -270,7 +428,7 @@ export function CalculatorSection() {
 
   // Calculate progress based on current step position in dynamic steps array
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
-  const progress = currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 100 : 0;
+  const progress = currentStepIndex >= 0 ?(currentStepIndex / (steps.length - 1)) * 100 : 0;
 
   useEffect(() => {
     if (isCalculating) {
@@ -290,51 +448,121 @@ export function CalculatorSection() {
       gas: formData.gasUsage * energyPrices.gas,
       total: 0,
     };
-    currentCosts.total = currentCosts.electricity + currentCosts.gas;
 
-    // Huidige CO2 uitstoot
-    const currentCO2 = (formData.electricityUsage * CO2_FACTORS.electricity + formData.gasUsage * CO2_FACTORS.gas) / 1000; // ton
+    // Bestaande solar feed-in verrekenen (gebruiker krijgt al geld terug)
+    if (formData.solarFeedIn > 0) {
+      currentCosts.electricity -= formData.solarFeedIn * energyPrices.feedInTariff;
+    }
+
+    currentCosts.total = currentCosts.electricity + currentCosts.gas;
 
     const recommendations: Recommendation[] = [];
     const hasInstallation = (id: string) => formData.existingInstallations.includes(id);
 
-    // 1. LED-verlichting (als ze het nog niet hebben)
+    // === SEQUENTIËLE BEREKENING ===
+    // Elke maatregel verlaagt het resterend verbruik voor volgende maatregelen
+    let remainingElecKwh = formData.electricityUsage;
+    let remainingGasM3 = formData.gasUsage;
+
+    // 1. LED-verlichting (hoogste ROI, eerst)
     if (!hasInstallation('led')) {
-      const lightingUsage = formData.electricityUsage * profile.lighting;
+      const lightingUsage = remainingElecKwh * profile.lighting;
       const savingsKwh = lightingUsage * SAVINGS_MEASURES.led.savingsPercent;
       const yearlySavings = savingsKwh * energyPrices.electricity;
       const investment = formData.buildingSize * SAVINGS_MEASURES.led.investmentPerM2;
       const co2Reduction = savingsKwh * CO2_FACTORS.electricity / 1000;
 
-      if (yearlySavings > 200) {
+      if (yearlySavings > 100) {
         recommendations.push({
           name: 'LED-verlichting',
           yearlySavings: Math.round(yearlySavings),
           investment: Math.round(investment),
           paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
           co2Reduction: Math.round(co2Reduction * 10) / 10,
-          priority: yearlySavings > 1000 ? 'high' : 'medium',
+          priority: yearlySavings > 1000 ?'high' : 'medium',
         });
+        remainingElecKwh -= savingsKwh;
       }
     }
 
-    // 2. Zonnepanelen (als ze het nog niet hebben)
+    // 2. Warmtepomp (vóór solar, want voegt elektra-vraag toe)
+    let heatpumpAdded = false;
+    if (!hasInstallation('heatpump') && formData.gasUsage > 2000 && formData.buildingSize <= SAVINGS_MEASURES.heatpump.maxBuildingSize) {
+      const heatingFraction = formData.businessType === 'production' ?0.40 : 0.85;
+      const gasForHeating = remainingGasM3 * heatingFraction;
+      const gasSavings = gasForHeating * SAVINGS_MEASURES.heatpump.gasSavingsPercent;
+      const extraElectricity = (gasSavings * 9.77) / SAVINGS_MEASURES.heatpump.cop;
+
+      const yearlySavings = (gasSavings * energyPrices.gas) - (extraElectricity * energyPrices.electricity);
+      const rawInvestment = SAVINGS_MEASURES.heatpump.baseCost + (formData.buildingSize * SAVINGS_MEASURES.heatpump.costPerM2);
+      const investment = Math.min(rawInvestment, SAVINGS_MEASURES.heatpump.maxInvestment);
+      const co2Reduction = (gasSavings * CO2_FACTORS.gas - extraElectricity * CO2_FACTORS.electricity) / 1000;
+      const payback = yearlySavings > 0 ?investment / yearlySavings : 99;
+
+      if (yearlySavings > 300 && payback <= SAVINGS_MEASURES.heatpump.lifespan) {
+        recommendations.push({
+          name: 'Warmtepomp',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round(payback * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: co2Reduction > 5 ?'high' : 'medium',
+        });
+        remainingGasM3 -= gasSavings;
+        remainingElecKwh += extraElectricity;
+        heatpumpAdded = true;
+      }
+    }
+
+    // 3. Slimme klimaatregeling (alleen als geen warmtepomp)
+    if (formData.gasUsage > 1000 && !hasInstallation('heatpump') && !heatpumpAdded) {
+      const heatingFraction = formData.businessType === 'production' ?0.40 : 0.85;
+      const heatingCosts = remainingGasM3 * energyPrices.gas * heatingFraction;
+      const yearlySavings = heatingCosts * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
+      const rawInvestment = SAVINGS_MEASURES.smartThermostat.baseCost + (formData.buildingSize * SAVINGS_MEASURES.smartThermostat.costPerM2);
+      const investment = Math.min(rawInvestment, SAVINGS_MEASURES.smartThermostat.maxInvestment);
+      const gasSavingsM3 = remainingGasM3 * heatingFraction * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
+      const co2Reduction = (gasSavingsM3 * CO2_FACTORS.gas) / 1000;
+
+      if (yearlySavings > 100) {
+        recommendations.push({
+          name: 'Slimme klimaatregeling',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: 'low',
+        });
+        remainingGasM3 -= gasSavingsM3;
+      }
+    }
+
+    // 4. Zonnepanelen (na LED/warmtepomp, zodat sizing op actuele vraag is)
     if (!hasInstallation('solar')) {
-      // Schat dakoppervlak: ~60% van vloeroppervlak bruikbaar
-      const roofArea = formData.buildingSize * 0.6;
+      const roofFraction: Record<string, number> = {
+        retail: 0.6, office: 0.3, warehouse: 0.7, production: 0.6,
+        hospitality: 0.4, healthcare: 0.25, other: 0.5,
+      };
+      // Sector-specifiek eigen verbruik (retail/kantoor laag door weekenden/avonden)
+      const selfConsumptionRate: Record<string, number> = {
+        retail: 0.55, office: 0.50, warehouse: 0.65, production: 0.75,
+        hospitality: 0.60, healthcare: 0.80, other: 0.65,
+      };
+
+      const roofArea = formData.buildingSize * (roofFraction[formData.businessType] || 0.5);
       const possibleKwp = roofArea * SAVINGS_MEASURES.solar.roofFactorPerM2;
-      const maxKwp = Math.min(possibleKwp, formData.electricityUsage / SAVINGS_MEASURES.solar.kWhPerKwp); // Niet meer dan je verbruikt
+      const maxKwp = Math.min(possibleKwp, remainingElecKwh / SAVINGS_MEASURES.solar.kWhPerKwp);
       const solarProduction = maxKwp * SAVINGS_MEASURES.solar.kWhPerKwp;
 
-      // Eigen verbruik vs teruglevering (schatting: 70% eigen verbruik voor bedrijven)
-      const eigenVerbruik = solarProduction * 0.7;
-      const teruglevering = solarProduction * 0.3;
+      const eigenVerbruikRatio = selfConsumptionRate[formData.businessType] || 0.65;
+      const eigenVerbruik = solarProduction * eigenVerbruikRatio;
+      const teruglevering = solarProduction * (1 - eigenVerbruikRatio);
 
       const yearlySavings = eigenVerbruik * energyPrices.electricity + teruglevering * energyPrices.feedInTariff;
       const investment = maxKwp * SAVINGS_MEASURES.solar.costPerKwp;
       const co2Reduction = solarProduction * CO2_FACTORS.electricity / 1000;
 
-      if (maxKwp > 5 && yearlySavings > 500) {
+      if (maxKwp > 3 && yearlySavings > 200) {
         recommendations.push({
           name: `Zonnepanelen (${Math.round(maxKwp)} kWp)`,
           yearlySavings: Math.round(yearlySavings),
@@ -343,36 +571,21 @@ export function CalculatorSection() {
           co2Reduction: Math.round(co2Reduction * 10) / 10,
           priority: 'high',
         });
+        remainingElecKwh -= eigenVerbruik;
       }
     }
 
-    // 3. Warmtepomp (als ze gas gebruiken en nog geen warmtepomp hebben)
-    if (!hasInstallation('heatpump') && formData.gasUsage > 2000) {
-      const gasForHeating = formData.gasUsage * 0.85; // 85% van gas is voor verwarming
-      const gasSavings = gasForHeating * SAVINGS_MEASURES.heatpump.gasSavingsPercent;
-      const extraElectricity = (gasSavings * 9.77) / SAVINGS_MEASURES.heatpump.cop; // 9.77 kWh/m³ gas equivalent
+    // 5. EMS (op basis van resterende kosten)
+    const remainingElecCost = remainingElecKwh * energyPrices.electricity;
+    const remainingGasCost = remainingGasM3 * energyPrices.gas;
+    const remainingTotalCost = remainingElecCost + remainingGasCost;
 
-      const yearlySavings = (gasSavings * energyPrices.gas) - (extraElectricity * energyPrices.electricity);
-      const investment = SAVINGS_MEASURES.heatpump.baseCost + (formData.buildingSize * SAVINGS_MEASURES.heatpump.costPerM2);
-      const co2Reduction = (gasSavings * CO2_FACTORS.gas - extraElectricity * CO2_FACTORS.electricity) / 1000;
-
-      if (yearlySavings > 500) {
-        recommendations.push({
-          name: 'Warmtepomp',
-          yearlySavings: Math.round(yearlySavings),
-          investment: Math.round(investment),
-          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
-          co2Reduction: Math.round(co2Reduction * 10) / 10,
-          priority: co2Reduction > 5 ? 'high' : 'medium',
-        });
-      }
-    }
-
-    // 4. Energiemanagementsysteem (als ze het nog niet hebben)
-    if (!hasInstallation('ems') && currentCosts.total > 10000) {
-      const yearlySavings = currentCosts.total * SAVINGS_MEASURES.ems.savingsPercent;
-      const investment = SAVINGS_MEASURES.ems.baseCost + (formData.buildingSize * SAVINGS_MEASURES.ems.costPerM2);
-      const co2Reduction = currentCO2 * SAVINGS_MEASURES.ems.savingsPercent;
+    if (!hasInstallation('ems') && remainingTotalCost > 10000) {
+      const yearlySavings = remainingTotalCost * SAVINGS_MEASURES.ems.savingsPercent;
+      const rawInvestment = SAVINGS_MEASURES.ems.baseCost + (formData.buildingSize * SAVINGS_MEASURES.ems.costPerM2);
+      const investment = Math.min(rawInvestment, SAVINGS_MEASURES.ems.maxInvestment);
+      const remainingCO2 = (remainingElecKwh * CO2_FACTORS.electricity + remainingGasM3 * CO2_FACTORS.gas) / 1000;
+      const co2Reduction = remainingCO2 * SAVINGS_MEASURES.ems.savingsPercent;
 
       recommendations.push({
         name: 'Energiemanagementsysteem (EMS)',
@@ -380,54 +593,65 @@ export function CalculatorSection() {
         investment: Math.round(investment),
         paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
         co2Reduction: Math.round(co2Reduction * 10) / 10,
-        priority: currentCosts.total > 25000 ? 'high' : 'medium',
+        priority: remainingTotalCost > 25000 ?'high' : 'medium',
       });
     }
 
-    // 5. Slimme thermostaat (als ze gas gebruiken)
-    if (formData.gasUsage > 1000 && !hasInstallation('heatpump')) {
-      const heatingCosts = formData.gasUsage * energyPrices.gas * 0.85;
-      const yearlySavings = heatingCosts * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
-      const investment = SAVINGS_MEASURES.smartThermostat.baseCost;
-      const co2Reduction = (formData.gasUsage * 0.85 * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent * CO2_FACTORS.gas) / 1000;
-
-      if (yearlySavings > 100) {
-        recommendations.push({
-          name: 'Slimme thermostaat',
-          yearlySavings: Math.round(yearlySavings),
-          investment: Math.round(investment),
-          paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
-          co2Reduction: Math.round(co2Reduction * 10) / 10,
-          priority: 'low',
-        });
-      }
-    }
-
-    // 6. Dynamisch contract (als ze dat nog niet hebben)
+    // 6. Dynamisch contract (op basis van resterende elektrakosten)
     if (formData.contractType !== 'dynamic') {
-      const potentialSavings = currentCosts.electricity * SAVINGS_MEASURES.dynamicContract.savingsPercent * profile.peakLoadFactor;
+      const potentialSavings = remainingElecCost * SAVINGS_MEASURES.dynamicContract.savingsPercent * profile.peakLoadFactor;
 
-      if (potentialSavings > 200) {
+      if (potentialSavings > 100) {
         recommendations.push({
           name: 'Overstappen naar dynamisch contract',
           yearlySavings: Math.round(potentialSavings),
           investment: 0,
           paybackYears: 0,
-          co2Reduction: 0, // Indirect effect
-          priority: potentialSavings > 1000 ? 'high' : 'medium',
+          co2Reduction: 0,
+          priority: potentialSavings > 1000 ?'high' : 'medium',
         });
       }
     }
 
-    // Sorteer op jaarlijkse besparing (hoogste eerst)
-    recommendations.sort((a, b) => b.yearlySavings - a.yearlySavings);
+    // Sorteer op basis van gebruikersprioriteiten
+    if (formData.priorities.length > 0) {
+      recommendations.sort((a, b) => {
+        let scoreA = 0, scoreB = 0;
+        const has = (p: string) => formData.priorities.includes(p);
+
+        if (has('cost')) {
+          scoreA += a.yearlySavings;
+          scoreB += b.yearlySavings;
+        }
+        if (has('sustainability')) {
+          scoreA += a.co2Reduction * 2000;
+          scoreB += b.co2Reduction * 2000;
+        }
+        if (has('independence')) {
+          if (a.name.includes('Zonnepanelen')) scoreA += 5000;
+          if (b.name.includes('Zonnepanelen')) scoreB += 5000;
+          if (a.name.includes('Warmtepomp')) scoreA += 3000;
+          if (b.name.includes('Warmtepomp')) scoreB += 3000;
+        }
+        if (has('comfort')) {
+          if (a.name.includes('Warmtepomp')) scoreA += 4000;
+          if (b.name.includes('Warmtepomp')) scoreB += 4000;
+          if (a.name.includes('klimaatregeling')) scoreA += 3000;
+          if (b.name.includes('klimaatregeling')) scoreB += 3000;
+        }
+
+        return scoreB - scoreA;
+      });
+    } else {
+      recommendations.sort((a, b) => b.yearlySavings - a.yearlySavings);
+    }
 
     // Bereken totalen (top 5 maatregelen)
     const topRecommendations = recommendations.slice(0, 5);
     const totalYearlySavings = topRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
     const totalInvestment = topRecommendations.reduce((sum, r) => sum + r.investment, 0);
     const totalCO2Reduction = topRecommendations.reduce((sum, r) => sum + r.co2Reduction, 0);
-    const avgPayback = totalInvestment > 0 ? totalInvestment / totalYearlySavings : 0;
+    const avgPayback = totalInvestment > 0 ?totalInvestment / totalYearlySavings : 0;
 
     return {
       currentCosts,
@@ -443,13 +667,13 @@ export function CalculatorSection() {
     const errors: Record<string, string> = {};
 
     if (!formData.contactName || formData.contactName.trim().length < 2) {
-      errors.contactName = 'Vul uw naam in (minimaal 2 tekens)';
+      errors.contactName = isEnglish ? 'Enter your name (at least 2 characters)' : 'Vul uw naam in (minimaal 2 tekens)';
     }
 
     if (!formData.email) {
-      errors.email = 'E-mailadres is verplicht';
+      errors.email = isEnglish ? 'Email address is required' : 'E-mailadres is verplicht';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Vul een geldig e-mailadres in';
+      errors.email = isEnglish ? 'Enter a valid email address' : 'Vul een geldig e-mailadres in';
     }
 
     setFormErrors(errors);
@@ -464,8 +688,8 @@ export function CalculatorSection() {
       `Elektriciteit: ${formData.electricityUsage.toLocaleString()} kWh/jaar`,
       `Gas: ${formData.gasUsage.toLocaleString()} m³/jaar`,
       `Contract: ${formData.contractType || 'Niet opgegeven'}`,
-      `Bestaande installaties: ${formData.existingInstallations.length > 0 ? formData.existingInstallations.join(', ') : 'Geen'}`,
-      `Prioriteiten: ${formData.priorities.length > 0 ? formData.priorities.join(', ') : 'Niet opgegeven'}`,
+      `Bestaande installaties: ${formData.existingInstallations.length > 0 ?formData.existingInstallations.join(', ') : 'Geen'}`,
+      `Prioriteiten: ${formData.priorities.length > 0 ?formData.priorities.join(', ') : 'Niet opgegeven'}`,
     ];
 
     if (results) {
@@ -478,42 +702,41 @@ export function CalculatorSection() {
       lines.push('');
       lines.push('Aanbevolen maatregelen:');
       results.recommendations.forEach((rec, i) => {
-        lines.push(`${i + 1}. ${rec.name} — €${rec.yearlySavings.toLocaleString()}/jaar besparing (investering: €${rec.investment.toLocaleString()}, terugverdientijd: ${rec.paybackYears} jaar)`);
+        lines.push(`${i + 1}. ${rec.name}: €${rec.yearlySavings.toLocaleString()}/jaar besparing (investering: €${rec.investment.toLocaleString()}, terugverdientijd: ${rec.paybackYears} jaar)`);
       });
     }
 
     return lines.join('\n');
   };
 
-  const submitLead = async () => {
+  const createMailtoHref = () => {
+    const subject = encodeURIComponent(`BespaarCheck aanvraag: ${formData.companyName || formData.contactName}`);
+    const body = encodeURIComponent(
+      [
+        `Naam: ${formData.contactName}`,
+        `E-mail: ${formData.email}`,
+        `Bedrijf: ${formData.companyName || 'Niet opgegeven'}`,
+        '',
+        buildLeadSummary(),
+      ].join('\n')
+    );
+
+    return `mailto:info@bespaarcheck.net?subject=${subject}&body=${body}`;
+  };
+
+  const submitLead = () => {
     if (isSubmitting) return;
+    // Honeypot spam check
+    if (formData.honeypot) {
+      setSubmitStatus('success');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
     try {
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_key: import.meta.env.VITE_WEB3FORMS_KEY || '',
-          subject: `BespaarCheck Lead: ${formData.companyName || formData.contactName}`,
-          from_name: 'BespaarCheck Calculator',
-          name: formData.contactName,
-          email: formData.email,
-          company: formData.companyName || 'Niet opgegeven',
-          message: buildLeadSummary(),
-          // Notificatie naar BespaarCheck
-          replyto: formData.email,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSubmitStatus('success');
-      } else {
-        throw new Error(data.message || 'Verzenden mislukt');
-      }
+      window.location.href = createMailtoHref();
+      setSubmitStatus('success');
     } catch {
       setSubmitStatus('error');
     } finally {
@@ -522,6 +745,7 @@ export function CalculatorSection() {
   };
 
   const handleNext = () => {
+    if (isTransitioning) return;
     const currentIndex = steps.findIndex(s => s.id === currentStep);
     const isLastStep = currentIndex === steps.length - 1;
 
@@ -544,11 +768,12 @@ export function CalculatorSection() {
         setIsCalculating(false);
         setResults(calculateResults());
         setShowResults(true);
-      }, 2800);
+      }, 1500);
     }
   };
 
   const handlePrevious = () => {
+    if (isTransitioning) return;
     if (showResults) {
       setShowResults(false);
       setResults(null);
@@ -569,12 +794,13 @@ export function CalculatorSection() {
     setShowResults(false);
     setResults(null);
     setCurrentStep(1);
-    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '' });
+    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '', honeypot: '' });
   };
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${Math.round(num / 1000)}k`;
+    if (num >= 100000) return `${Math.round(num / 1000)}k`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}k`;
     return num.toString();
   };
 
@@ -582,10 +808,10 @@ export function CalculatorSection() {
     <section
       id="calculator"
       ref={containerRef}
-      className="py-24 relative overflow-hidden transition-colors duration-300"
+      className="material-section relative overflow-hidden transition-colors duration-300"
       style={{
         background: isDark
-          ? 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)'
+          ?'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)'
           : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
       }}
     >
@@ -607,15 +833,25 @@ export function CalculatorSection() {
         />
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
+      <div className="relative max-w-5xl mx-auto px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Bereken uw besparing
+          <div className="material-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold mb-4">
+            <Sparkles className="w-4 h-4" />
+            {t.chip}
+          </div>
+          <h2 className="material-title text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            {t.title}
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Vul uw gegevens in en ontdek direct wat u kunt besparen op uw energiekosten
+            {t.intro}
           </p>
+          {isLoadingPrices && (
+            <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+              <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-emerald-500 rounded-full animate-spin" />
+              {t.loadingPrices}
+            </div>
+          )}
         </div>
 
         {/* Main Calculator Container */}
@@ -625,10 +861,10 @@ export function CalculatorSection() {
         >
           {/* Main card */}
           <div
-            className="relative rounded-2xl overflow-hidden bg-white dark:bg-gray-800"
+            className="material-card-active relative rounded-lg overflow-hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             style={{
               boxShadow: isDark
-                ? '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 20px 50px -12px rgba(0, 0, 0, 0.5)'
+                ?'0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 20px 50px -12px rgba(0, 0, 0, 0.5)'
                 : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 20px 50px -12px rgba(0, 0, 0, 0.15)',
             }}
           >
@@ -643,7 +879,7 @@ export function CalculatorSection() {
                 className="absolute inset-0"
                 style={{
                   background: isDark
-                    ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)'
+                    ?'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)'
                     : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
                   animation: 'shimmer-line 5s ease-in-out infinite',
                 }}
@@ -672,21 +908,21 @@ export function CalculatorSection() {
                       <div
                         className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                           isActive
-                            ? 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900'
+                            ?'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900'
                             : isCompleted
-                            ? 'bg-emerald-500'
+                            ?'bg-emerald-500'
                             : 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600'
                         }`}
                       >
-                        {isCompleted ? (
+                        {isCompleted ?(
                           <CheckCircle className="w-5 h-5 text-white" />
                         ) : (
-                          <Icon className={`w-5 h-5 ${isActive || isCompleted ? 'text-white' : 'text-gray-400'}`} />
+                          <Icon className={`w-5 h-5 ${isActive || isCompleted ?'text-white' : 'text-gray-400'}`} />
                         )}
                       </div>
                       <span
                         className={`mt-2 text-xs font-medium transition-all duration-300 ${
-                          isActive ? 'text-emerald-600 dark:text-emerald-400 sm:block' : isCompleted ? 'text-emerald-500 dark:text-emerald-400 hidden sm:block' : 'text-gray-500 dark:text-gray-400 hidden sm:block'
+                          isActive ?'text-emerald-600 dark:text-emerald-400 sm:block' : isCompleted ?'text-emerald-500 dark:text-emerald-400 hidden sm:block' : 'text-gray-500 dark:text-gray-400 hidden sm:block'
                         }`}
                       >
                         {step.label}
@@ -699,7 +935,7 @@ export function CalculatorSection() {
 
             {/* Form Content */}
             <div className="px-4 sm:px-8 pb-6 sm:pb-8">
-              <div className="rounded-xl p-4 sm:p-8 min-h-[350px] bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700">
+              <div className="rounded-lg p-4 sm:p-8 min-h-[350px] bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700">
                 {/* Calculation Animation */}
                 {isCalculating && (
                   <div className="flex flex-col items-center justify-center h-[350px] relative">
@@ -721,7 +957,7 @@ export function CalculatorSection() {
                     {/* Status text */}
                     <div className="text-center">
                       <p className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                        {['Analyseren...', 'Berekenen...', 'Optimaliseren...', 'Afronden...'][calculationPhase % 4]}
+                        {t.phases[calculationPhase % 4]}
                       </p>
 
                       {/* Progress bar */}
@@ -742,21 +978,21 @@ export function CalculatorSection() {
                   <div className="animate-fade-in">
                     {/* Success header */}
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 mb-3">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-emerald-500 mb-3">
                         <CheckCircle className="w-7 h-7 text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Uw Besparingsanalyse</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">Gebaseerd op actuele energieprijzen en uw bedrijfsprofiel</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t.resultsTitle}</h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">{t.resultsSubtitle}</p>
                     </div>
 
                     {/* Current costs context */}
-                    <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
+                    <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
                       <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
                         Uw geschatte huidige energiekosten: <span className="font-bold text-gray-900 dark:text-white">€{results.currentCosts.total.toLocaleString()}</span>/jaar
                         <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} elektra + €{results.currentCosts.gas.toLocaleString()} gas)</span>
                       </p>
                       <div className="mt-2 flex items-center justify-center gap-2 text-xs">
-                        {energyPrices.isLive ? (
+                        {energyPrices.isLive ?(
                           <>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -784,7 +1020,7 @@ export function CalculatorSection() {
                       ].map((stat, i) => (
                         <div
                           key={i}
-                          className={`p-4 rounded-xl ${stat.bg} border ${stat.border}`}
+                          className={`p-4 rounded-lg ${stat.bg} border ${stat.border}`}
                         >
                           <div className="flex items-center gap-3">
                             <div
@@ -808,66 +1044,78 @@ export function CalculatorSection() {
                     <div className="mb-6">
                       <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-emerald-500" />
-                        Aanbevolen maatregelen
+                        {isEnglish ? 'Recommended measures' : 'Aanbevolen maatregelen'}
                       </h4>
-                      <div className="space-y-2">
-                        {results.recommendations.map((rec, i) => (
-                          <div
-                            key={i}
-                            className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
-                          >
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                  rec.priority === 'high' ? 'bg-emerald-500' : rec.priority === 'medium' ? 'bg-amber-500' : 'bg-gray-400'
-                                }`}>
-                                  <span className="text-white font-bold text-sm">{i + 1}</span>
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-medium text-gray-900 dark:text-white truncate">{rec.name}</p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {rec.investment > 0 ? `Investering: €${rec.investment.toLocaleString()}` : 'Geen investering nodig'}
-                                    {rec.paybackYears > 0 && ` • Terugverdientijd: ${rec.paybackYears} jaar`}
-                                  </p>
+                      {results.recommendations.length === 0 ?(
+                        <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                          <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+                          <p className="font-semibold text-gray-900 dark:text-white mb-1">{isEnglish ? 'Good progress' : 'Goed bezig!'}</p>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            {isEnglish ? 'Based on your input, no direct standard saving measures were found. You are already on the right track, or your consumption is too low for standard measures. Contact us for personal advice.' : 'Op basis van uw invoer zijn er geen directe besparingsmaatregelen gevonden. U bent al goed op weg, of uw verbruik is te laag voor standaard maatregelen. Neem contact op voor persoonlijk advies.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            {results.recommendations.map((rec, i) => (
+                              <div
+                                key={i}
+                                className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
+                              >
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                      rec.priority === 'high' ?'bg-emerald-500' : rec.priority === 'medium' ?'bg-amber-500' : 'bg-gray-400'
+                                    }`}>
+                                      <span className="text-white font-bold text-sm">{i + 1}</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-gray-900 dark:text-white truncate">{rec.name}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        {rec.investment > 0 ?`Investering: €${rec.investment.toLocaleString()}` : 'Geen investering nodig'}
+                                        {rec.paybackYears > 0 && ` • Terugverdientijd: ${rec.paybackYears} jaar`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <p className="font-bold text-emerald-600 dark:text-emerald-400">€{rec.yearlySavings.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">/jaar</p>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="font-bold text-emerald-600 dark:text-emerald-400">€{rec.yearlySavings.toLocaleString()}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">/jaar</p>
-                              </div>
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                      {results.totalInvestment > 0 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                          Totale geschatte investering: €{results.totalInvestment.toLocaleString()}
-                        </p>
+                          {results.totalInvestment > 0 && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                              Totale geschatte investering: €{results.totalInvestment.toLocaleString()}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
 
                     {/* Disclaimer */}
                     <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 mb-6">
                       <p className="text-amber-800 dark:text-amber-200 text-xs text-center">
-                        Dit is een indicatieve berekening. Werkelijke besparingen kunnen afwijken en zijn afhankelijk van specifieke omstandigheden.
+                        {t.disclaimer}
                       </p>
                     </div>
 
                     {/* CTA Section */}
-                    {submitStatus === 'success' ? (
-                      <div className="p-6 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                    {submitStatus === 'success' ?(
+                      <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500 mb-3">
                           <Check className="w-6 h-6 text-white" />
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Aanvraag verzonden!</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">{isEnglish ? 'Request prepared' : 'Aanvraag klaargezet'}</h4>
                         <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                          Wij nemen zo snel mogelijk contact met u op via <strong>{formData.email}</strong>.
+                          {t.mailOpened}
                         </p>
                         <button
                           onClick={resetCalculator}
-                          className="px-6 py-3 rounded-xl font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:text-gray-800 transition-all"
+                          className="px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:text-gray-800 transition-all"
                         >
-                          Nieuwe berekening
+                          {t.newCalculation}
                         </button>
                       </div>
                     ) : (
@@ -876,39 +1124,39 @@ export function CalculatorSection() {
                           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
                             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                             <p className="text-red-700 dark:text-red-300 text-sm">
-                              Er ging iets mis bij het verzenden. Probeer het opnieuw of mail naar{' '}
-                              <a href="mailto:info@bespaarcheckenergie.nl" className="underline font-medium">info@bespaarcheckenergie.nl</a>.
+                              {t.mailError}{' '}
+                              <a href="mailto:info@bespaarcheck.net" className="underline font-medium">info@bespaarcheck.net</a>.
                             </p>
                           </div>
                         )}
                         <div className="flex flex-col sm:flex-row gap-3">
                           <button
                             onClick={resetCalculator}
-                            className="px-6 py-3 rounded-xl font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                            className="px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
                           >
                             <span className="flex items-center gap-2">
                               <ArrowRight className="w-4 h-4 rotate-180" />
-                              Nieuwe berekening
+                              {t.newCalculation}
                             </span>
                           </button>
                           <button
                             onClick={submitLead}
                             disabled={isSubmitting}
-                            className={`flex-1 px-8 py-4 rounded-xl font-semibold text-white transition-all ${
+                            className={`flex-1 px-8 py-4 rounded-lg font-semibold text-white transition-all ${
                               isSubmitting
-                                ? 'bg-emerald-400 cursor-wait'
+                                ?'bg-emerald-400 cursor-wait'
                                 : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
                             }`}
                           >
                             <span className="flex items-center justify-center gap-2">
-                              {isSubmitting ? (
+                              {isSubmitting ?(
                                 <>
-                                  Verzenden...
+                                  {t.preparing}
                                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 </>
                               ) : (
                                 <>
-                                  Vraag gratis adviesgesprek aan
+                                  {t.prepareRequest}
                                   <Send className="w-5 h-5" />
                                 </>
                               )}
@@ -923,47 +1171,46 @@ export function CalculatorSection() {
                 {/* Form Steps with Slide Transitions */}
                 {!showResults && !isCalculating && (
                   <div
-                    className={`step-transition ${isTransitioning ? 'transitioning' : ''} ${transitionDirection}`}
+                    className={`step-transition ${isTransitioning ?'transitioning' : ''} ${transitionDirection}`}
                     style={{
-                      animation: !isTransitioning ? 'step-slide-in 0.4s ease-out' : 'step-slide-out 0.2s ease-in',
-                      animationFillMode: 'both',
+                      animation: !isTransitioning ?'step-slide-in 0.4s ease-out both' : 'step-slide-out 0.2s ease-in both',
                     }}
                   >
                     {/* Step 1: Business Info */}
                     {currentStep === 1 && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-emerald-500 flex items-center justify-center">
                             <Building2 className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Vertel ons over uw bedrijf</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">We stemmen de analyse af op uw sector</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.businessTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.businessIntro}</p>
                           </div>
                         </div>
 
                         {/* Dropdown */}
                         <div className="mb-6">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Bedrijfstype
+                            {t.businessType}
                           </label>
                           <div className="relative">
                             <button
                               type="button"
                               onClick={() => setActiveDropdown(!activeDropdown)}
                               className={`w-full px-4 py-3 rounded-lg text-left flex items-center justify-between transition-all bg-white dark:bg-gray-800 border ${
-                                activeDropdown ? 'border-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-900' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                                activeDropdown ?'border-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-900' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                               }`}
                             >
-                              <span className={`${formData.businessType ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                                {businessTypes.find(t => t.value === formData.businessType)?.label || 'Selecteer type...'}
+                              <span className={`${formData.businessType ?'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                {businessOptions.find(type => type.value === formData.businessType)?.label || t.selectType}
                               </span>
-                              <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown ? 'rotate-180' : ''}`} />
+                              <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${activeDropdown ?'rotate-180' : ''}`} />
                             </button>
 
                             {activeDropdown && (
                               <div className="absolute z-50 w-full mt-1 py-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
-                                {businessTypes.slice(1).map((type) => (
+                                {businessOptions.slice(1).map((type) => (
                                   <button
                                     key={type.value}
                                     onClick={() => {
@@ -971,10 +1218,10 @@ export function CalculatorSection() {
                                       setActiveDropdown(false);
                                     }}
                                     className={`w-full px-4 py-2.5 text-left transition-colors flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                                      formData.businessType === type.value ? 'bg-emerald-50 dark:bg-emerald-900/30' : ''
+                                      formData.businessType === type.value ?'bg-emerald-50 dark:bg-emerald-900/30' : ''
                                     }`}
                                   >
-                                    <span className={formData.businessType === type.value ? 'text-emerald-700 dark:text-emerald-400 font-medium' : 'text-gray-700 dark:text-gray-300'}>
+                                    <span className={formData.businessType === type.value ?'text-emerald-700 dark:text-emerald-400 font-medium' : 'text-gray-700 dark:text-gray-300'}>
                                       {type.label}
                                     </span>
                                     {formData.businessType === type.value && (
@@ -990,9 +1237,9 @@ export function CalculatorSection() {
                         {/* Building Size Slider */}
                         <div className="mt-6">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Bedrijfspand grootte
+                            {t.buildingSize}
                           </label>
-                          <div className="relative p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                          <div className="relative p-5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                             <div className="flex justify-between items-center mb-6">
                               <span className="text-gray-400 dark:text-gray-400 text-sm">{currentRanges.buildingSize.min.toLocaleString()} m²</span>
                               <div className="px-6 py-2 rounded-full bg-emerald-500">
@@ -1019,12 +1266,12 @@ export function CalculatorSection() {
                     {currentStep === 2 && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center">
                             <Zap className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Uw energieverbruik</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Dit helpt ons de besparing te berekenen</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.usageTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.usageIntro}</p>
                           </div>
                         </div>
 
@@ -1032,9 +1279,9 @@ export function CalculatorSection() {
                           {/* Electricity Slider */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Elektriciteitsverbruik
+                              {t.electricityUsage}
                             </label>
-                            <div className="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            <div className="p-5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                               <div className="flex justify-between items-center mb-6">
                                 <span className="text-gray-400 dark:text-gray-400 text-sm">{formatNumber(currentRanges.electricity.min)} kWh</span>
                                 <div className="px-6 py-2 rounded-full bg-amber-500">
@@ -1058,9 +1305,9 @@ export function CalculatorSection() {
                           {/* Gas Slider */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Gasverbruik
+                              {t.gasUsage}
                             </label>
-                            <div className="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            <div className="p-5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                               <div className="flex justify-between items-center mb-6">
                                 <span className="text-gray-400 dark:text-gray-400 text-sm">{formatNumber(currentRanges.gas.min)} m³</span>
                                 <div className="px-6 py-2 rounded-full bg-orange-500">
@@ -1088,21 +1335,20 @@ export function CalculatorSection() {
                     {currentStep === 3 && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center">
                             <Sun className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Huidige installaties</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.systemsTitle}</h3>
                             <p className="text-gray-500 dark:text-gray-400 text-sm">Selecteer wat u al heeft geïnstalleerd</p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[
+                            { id: 'led', label: 'LED-verlichting', desc: 'Energiezuinige verlichting', icon: Zap, color: '#22c55e' },
                             { id: 'solar', label: 'Zonnepanelen', desc: 'Eigen stroomopwekking', icon: Sun, color: '#f59e0b' },
                             { id: 'heatpump', label: 'Warmtepomp', desc: 'Efficiënte verwarming', icon: Thermometer, color: '#ef4444' },
-                            { id: 'charging', label: 'Laadpalen', desc: 'Elektrisch rijden', icon: Car, color: '#3b82f6' },
-                            { id: 'battery', label: 'Batterijopslag', desc: 'Energie bufferen', icon: Battery, color: '#10b981' },
                             { id: 'ems', label: 'EMS Systeem', desc: 'Slim energiebeheer', icon: Settings, color: '#8b5cf6' },
                           ].map((option) => {
                             const isSelected = formData.existingInstallations.includes(option.id);
@@ -1112,18 +1358,18 @@ export function CalculatorSection() {
                                 key={option.id}
                                 onClick={() => {
                                   const newInstallations = isSelected
-                                    ? formData.existingInstallations.filter((i) => i !== option.id)
+                                    ?formData.existingInstallations.filter((i) => i !== option.id)
                                     : [...formData.existingInstallations, option.id];
                                   setFormData({ ...formData, existingInstallations: newInstallations });
                                 }}
-                                className={`p-4 rounded-xl text-left transition-all border-2 ${
+                                className={`p-4 rounded-lg text-left transition-all border-2 ${
                                   isSelected
-                                    ? 'border-current bg-opacity-10'
+                                    ?'border-current bg-opacity-10'
                                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
                                 }`}
                                 style={{
-                                  borderColor: isSelected ? option.color : undefined,
-                                  backgroundColor: isSelected ? `${option.color}10` : undefined,
+                                  borderColor: isSelected ?option.color : undefined,
+                                  backgroundColor: isSelected ?`${option.color}10` : undefined,
                                 }}
                               >
                                 <div className="flex items-center gap-3">
@@ -1146,9 +1392,9 @@ export function CalculatorSection() {
                           })}
                         </div>
 
-                        <div className="mt-6 p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-center">
+                        <div className="mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-center">
                           <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            Geen installaties? Geen probleem - we analyseren alle mogelijkheden
+                            {t.noSystems}
                           </p>
                         </div>
                       </div>
@@ -1158,12 +1404,12 @@ export function CalculatorSection() {
                     {currentStep === 'solar' && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center">
                             <ArrowDownUp className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Teruglevering zonnepanelen</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Hoeveel levert u terug aan het net?</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.feedTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.feedIntro}</p>
                           </div>
                         </div>
 
@@ -1171,9 +1417,9 @@ export function CalculatorSection() {
                           {/* Feed-in slider */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Jaarlijkse teruglevering
+                              {t.annualFeed}
                             </label>
-                            <div className="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                            <div className="p-5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                               <div className="flex justify-between items-center mb-6">
                                 <span className="text-gray-400 dark:text-gray-400 text-sm">0 kWh</span>
                                 <div className="px-6 py-2 rounded-full bg-amber-500">
@@ -1195,7 +1441,7 @@ export function CalculatorSection() {
                           </div>
 
                           {/* Info box */}
-                          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800">
+                          <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800">
                             <p className="text-gray-600 dark:text-gray-400 text-sm">
                               <span className="text-amber-600 dark:text-amber-400 font-semibold">Tip:</span> Teruglevering is de stroom die uw zonnepanelen produceren maar die u niet zelf verbruikt. Dit wordt teruggeleverd aan het elektriciteitsnet.
                             </p>
@@ -1203,7 +1449,7 @@ export function CalculatorSection() {
 
                           {/* Quick select buttons */}
                           <div>
-                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Snelle selectie:</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{t.quickSelect}</p>
                             <div className="flex flex-wrap gap-2">
                               {[0, 25, 50, 75].map((percent) => {
                                 const value = Math.round(formData.electricityUsage * 0.8 * (percent / 100));
@@ -1214,7 +1460,7 @@ export function CalculatorSection() {
                                     onClick={() => setFormData({ ...formData, solarFeedIn: value })}
                                     className={`px-4 py-2 rounded-lg font-medium transition-all border-2 ${
                                       isSelected
-                                        ? 'border-amber-500 bg-amber-500 text-white'
+                                        ?'border-amber-500 bg-amber-500 text-white'
                                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
                                     }`}
                                   >
@@ -1232,12 +1478,12 @@ export function CalculatorSection() {
                     {currentStep === 4 && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
                             <Euro className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Uw energiecontract</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Selecteer uw huidige contractvorm</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.contractTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.contractIntro}</p>
                           </div>
                         </div>
 
@@ -1253,14 +1499,14 @@ export function CalculatorSection() {
                               <button
                                 key={option.value}
                                 onClick={() => setFormData({ ...formData, contractType: option.value })}
-                                className={`relative w-full p-4 rounded-xl text-left transition-all border-2 ${
+                                className={`relative w-full p-4 rounded-lg text-left transition-all border-2 ${
                                   isSelected
-                                    ? 'bg-white dark:bg-gray-800'
+                                    ?'bg-white dark:bg-gray-800'
                                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
                                 }`}
                                 style={{
-                                  borderColor: isSelected ? option.color : undefined,
-                                  backgroundColor: isSelected ? `${option.color}08` : undefined,
+                                  borderColor: isSelected ?option.color : undefined,
+                                  backgroundColor: isSelected ?`${option.color}08` : undefined,
                                 }}
                               >
                                 {/* Recommended badge */}
@@ -1271,7 +1517,7 @@ export function CalculatorSection() {
                                   >
                                     <span className="flex items-center gap-1">
                                       <Sparkles className="w-3 h-3" />
-                                      Aanbevolen
+                                      {t.recommended}
                                     </span>
                                   </div>
                                 )}
@@ -1281,8 +1527,8 @@ export function CalculatorSection() {
                                   <div
                                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all`}
                                     style={{
-                                      borderColor: isSelected ? option.color : '#d1d5db',
-                                      backgroundColor: isSelected ? option.color : 'transparent',
+                                      borderColor: isSelected ?option.color : '#d1d5db',
+                                      backgroundColor: isSelected ?option.color : 'transparent',
                                     }}
                                   >
                                     {isSelected && (
@@ -1314,10 +1560,10 @@ export function CalculatorSection() {
                           })}
                         </div>
 
-                        <div className="mt-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800">
+                        <div className="mt-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800">
                           <p className="text-gray-600 dark:text-gray-300 text-sm flex items-center gap-2">
                             <Zap className="w-4 h-4 text-blue-500" />
-                            <span>Dynamische tarieven kunnen tot <span className="text-blue-600 dark:text-blue-400 font-semibold">30% extra besparing</span> opleveren</span>
+                            <span>{t.dynamicNote} <span className="text-blue-600 dark:text-blue-400 font-semibold">{t.dynamicNoteStrong}</span> {isEnglish ? 'deliver' : 'opleveren'}</span>
                           </p>
                         </div>
                       </div>
@@ -1327,12 +1573,12 @@ export function CalculatorSection() {
                     {currentStep === 5 && (
                       <div>
                         <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-xl bg-violet-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-violet-500 flex items-center justify-center">
                             <Users className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Wat is belangrijk voor u?</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Selecteer een of meerdere prioriteiten</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.prioritiesTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.prioritiesIntro}</p>
                           </div>
                         </div>
 
@@ -1350,23 +1596,23 @@ export function CalculatorSection() {
                                 key={option.id}
                                 onClick={() => {
                                   const newPriorities = isSelected
-                                    ? formData.priorities.filter((p) => p !== option.id)
+                                    ?formData.priorities.filter((p) => p !== option.id)
                                     : [...formData.priorities, option.id];
                                   setFormData({ ...formData, priorities: newPriorities });
                                 }}
-                                className={`p-4 rounded-xl text-center transition-all border-2 ${
+                                className={`p-4 rounded-lg text-center transition-all border-2 ${
                                   isSelected
-                                    ? 'bg-white dark:bg-gray-800'
+                                    ?'bg-white dark:bg-gray-800'
                                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
                                 }`}
                                 style={{
-                                  borderColor: isSelected ? option.color : undefined,
-                                  backgroundColor: isSelected ? `${option.color}10` : undefined,
+                                  borderColor: isSelected ?option.color : undefined,
+                                  backgroundColor: isSelected ?`${option.color}10` : undefined,
                                 }}
                               >
                                 <div className="flex flex-col items-center">
                                   <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center mb-3"
                                     style={{ backgroundColor: option.color }}
                                   >
                                     <Icon className="w-6 h-6 text-white" />
@@ -1387,10 +1633,10 @@ export function CalculatorSection() {
                           })}
                         </div>
 
-                        <div className="mt-6 p-4 rounded-xl bg-violet-50 dark:bg-violet-900/30 border border-violet-100 dark:border-violet-800 text-center">
+                        <div className="mt-6 p-4 rounded-lg bg-violet-50 dark:bg-violet-900/30 border border-violet-100 dark:border-violet-800 text-center">
                           <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center justify-center gap-2">
                             <Cpu className="w-4 h-4 text-violet-500" />
-                            <span>We passen de analyse aan op uw voorkeuren</span>
+                            <span>{t.prioritiesNote}</span>
                           </p>
                         </div>
                       </div>
@@ -1400,22 +1646,20 @@ export function CalculatorSection() {
                     {currentStep === 6 && (
                       <div>
                         <div className="flex items-center gap-4 mb-6">
-                          <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-teal-500 flex items-center justify-center">
                             <Mail className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ontvang uw rapport</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Wij sturen de analyse naar uw e-mailadres</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t.contactTitle}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t.contactIntro}</p>
                           </div>
                         </div>
 
-                        <div className="p-5 rounded-xl bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 mb-6">
+                        <div className="p-5 rounded-lg bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 mb-6">
                           <p className="text-gray-700 dark:text-gray-300 text-sm flex items-start gap-3">
                             <Sparkles className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
                             <span>
-                              Na het invullen ontvangt u direct een <strong>persoonlijk besparingsrapport</strong> met
-                              concrete aanbevelingen en een indicatie van uw besparingspotentieel.
-                              <span className="text-teal-600 dark:text-teal-400 font-medium"> 100% gratis en vrijblijvend.</span>
+                              {t.contactBox}
                             </span>
                           </p>
                         </div>
@@ -1424,7 +1668,7 @@ export function CalculatorSection() {
                           {/* Name */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Uw naam <span className="text-red-500">*</span>
+                              {t.name} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1433,12 +1677,16 @@ export function CalculatorSection() {
                                 value={formData.contactName}
                                 onChange={(e) => {
                                   setFormData({ ...formData, contactName: e.target.value });
-                                  if (formErrors.contactName) setFormErrors(prev => { const { contactName: _, ...rest } = prev; return rest; });
+                                  if (formErrors.contactName) setFormErrors(prev => {
+                                    const next = { ...prev };
+                                    delete next.contactName;
+                                    return next;
+                                  });
                                 }}
                                 placeholder="Jan Jansen"
                                 className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
                                   formErrors.contactName
-                                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
+                                    ?'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
                                     : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
                                 }`}
                               />
@@ -1454,7 +1702,7 @@ export function CalculatorSection() {
                           {/* Company */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Bedrijfsnaam
+                              {t.company}
                             </label>
                             <div className="relative">
                               <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1471,7 +1719,7 @@ export function CalculatorSection() {
                           {/* Email */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              E-mailadres <span className="text-red-500">*</span>
+                              {t.email} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1480,12 +1728,16 @@ export function CalculatorSection() {
                                 value={formData.email}
                                 onChange={(e) => {
                                   setFormData({ ...formData, email: e.target.value });
-                                  if (formErrors.email) setFormErrors(prev => { const { email: _, ...rest } = prev; return rest; });
+                                  if (formErrors.email) setFormErrors(prev => {
+                                    const next = { ...prev };
+                                    delete next.email;
+                                    return next;
+                                  });
                                 }}
                                 placeholder="jan@uwbedrijf.nl"
                                 className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white dark:bg-gray-800 border transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
                                   formErrors.email
-                                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
+                                    ?'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900'
                                     : 'border-gray-200 dark:border-gray-600 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900'
                                 }`}
                               />
@@ -1499,10 +1751,22 @@ export function CalculatorSection() {
                           </div>
                         </div>
 
-                        <div className="mt-6 p-4 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        {/* Honeypot - hidden from users, catches bots */}
+                        <div className="absolute opacity-0 -z-10" aria-hidden="true" tabIndex={-1}>
+                          <label htmlFor="website">Website</label>
+                          <input
+                            type="text"
+                            id="website"
+                            name="website"
+                            autoComplete="off"
+                            value={formData.honeypot}
+                            onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                           <p className="text-gray-500 dark:text-gray-400 text-xs text-center">
-                            Door op "Bereken besparing" te klikken gaat u akkoord met onze privacyvoorwaarden.
-                            Wij delen uw gegevens nooit met derden.
+                            {t.privacy}
                           </p>
                         </div>
                       </div>
@@ -1514,15 +1778,15 @@ export function CalculatorSection() {
                       <button
                         onClick={handlePrevious}
                         disabled={currentStepIndex === 0}
-                        className={`px-6 py-3 rounded-xl font-medium transition-all border ${
+                        className={`px-6 py-3 rounded-lg font-medium transition-all border ${
                           currentStepIndex === 0
-                            ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                            ?'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed'
                             : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
                         }`}
                       >
                         <span className="flex items-center gap-2">
                           <ArrowRight className="w-4 h-4 rotate-180" />
-                          Vorige
+                          {t.previous}
                         </span>
                       </button>
 
@@ -1530,21 +1794,21 @@ export function CalculatorSection() {
                       <button
                         onClick={handleNext}
                         disabled={(currentStep === 1 && !formData.businessType)}
-                        className={`flex-1 px-8 py-4 rounded-xl font-semibold text-white transition-all ${
+                        className={`flex-1 px-8 py-4 rounded-lg font-semibold text-white transition-all ${
                           (currentStep === 1 && !formData.businessType)
-                            ? 'bg-gray-300 cursor-not-allowed'
+                            ?'bg-gray-300 cursor-not-allowed'
                             : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
                         }`}
                       >
                         <span className="flex items-center justify-center gap-2">
-                          {currentStepIndex === steps.length - 1 ? (
+                          {currentStepIndex === steps.length - 1 ?(
                             <>
-                              Bereken besparing
+                              {t.calculate}
                               <Sparkles className="w-5 h-5" />
                             </>
                           ) : (
                             <>
-                              Volgende
+                              {t.next}
                               <ArrowRight className="w-5 h-5" />
                             </>
                           )}

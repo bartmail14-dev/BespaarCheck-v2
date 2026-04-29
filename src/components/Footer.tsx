@@ -1,123 +1,99 @@
-import { Mail, MapPin, Phone, Linkedin, Award } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { ArrowRight, Mail, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Footer() {
-  const { isDark } = useTheme();
+  const { isEnglish } = useLanguage();
+  const text = isEnglish
+    ? {
+        description:
+          'BespaarCheck helps SMEs get a non-binding view of energy savings, payback time and possible regulatory attention points.',
+        reassurance: 'Everything is completely non-binding. You get insight first and are not committed to anything.',
+        contactLabel: 'Contact',
+        title: 'Ask a question or review options together?',
+        contactText: 'Send an e-mail. We keep it practical, clear and without obligations.',
+        navLabel: 'Footer navigation',
+        copyright: 'Indicative and non-binding.',
+        links: [
+          { label: 'Saving options', href: '#savings' },
+          { label: 'Rules and regulations', href: '#regelgeving' },
+          { label: 'Frequently asked questions', href: '#faq' },
+          { label: 'Start the check', href: '#calculator' },
+        ],
+      }
+    : {
+        description:
+          'BespaarCheck helpt MKB-bedrijven vrijblijvend inzicht krijgen in energiebesparing, terugverdientijd en mogelijke aandachtspunten rond wet- en regelgeving.',
+        reassurance: 'Alles is volledig vrijblijvend. U krijgt eerst inzicht en zit nergens aan vast.',
+        contactLabel: 'Contact',
+        title: 'Vraag stellen of samen kijken?',
+        contactText: 'Stuur een e-mail. We houden het praktisch, helder en zonder verplichtingen.',
+        navLabel: 'Footer navigatie',
+        copyright: 'Indicatief en vrijblijvend.',
+        links: [
+          { label: 'Bespaarmogelijkheden', href: '#savings' },
+          { label: 'Wet- en regelgeving', href: '#regelgeving' },
+          { label: 'Veelgestelde vragen', href: '#faq' },
+          { label: 'Doe de check', href: '#calculator' },
+        ],
+      };
 
   return (
-    <footer
-      id="contact"
-      className="py-20"
-      style={{
-        background: isDark
-          ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
-          : 'linear-gradient(135deg, #1a365d 0%, #1e3a5f 50%, #0f2744 100%)',
-      }}
-    >
-      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          {/* Left Column - Logo & Description */}
-          <div>
-            <div className="mb-8">
-              <img src="/logo.png" alt="BespaarCheck" className="h-12 brightness-0 invert" />
-            </div>
-            <p className="text-gray-300 text-sm leading-relaxed max-w-md mb-8">
-              BespaarCheck biedt de kennis, diensten en producten om uw energieprestaties te
-              verbeteren vanuit een innovatief perspectief. Dat is wat ons energie geeft!
+    <footer id="contact" className="bg-white dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-14">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] items-stretch">
+          <div className="rounded-lg border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 p-6 sm:p-8">
+            <img src="/logo.png" alt="BespaarCheck" className="h-12 dark:hidden" />
+            <img src="/logo-light.png" alt="BespaarCheck" className="hidden h-12 dark:block" />
+            <p className="mt-6 max-w-2xl text-base leading-7 text-gray-600 dark:text-gray-300">
+              {text.description}
             </p>
-
-            {/* Social Links */}
-            <div className="flex gap-3">
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <Linkedin className="w-5 h-5 text-gray-300" />
-              </a>
+            <div className="mt-6 inline-flex items-start gap-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 bg-white dark:bg-slate-950 px-4 py-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-300" />
+              <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">
+                {text.reassurance}
+              </p>
             </div>
           </div>
 
-          {/* Right Column - Contact */}
-          <div>
-            <div className="flex items-center gap-2 mb-8">
-              <Mail className="w-5 h-5 text-green-400" />
-              <h3 className="text-white font-semibold text-lg">Contact</h3>
-            </div>
-
-            <div className="space-y-5">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="text-gray-300 text-sm pt-2">
-                  <p>Energiepark 15</p>
-                  <p>3833 AM Leusden</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-5 h-5 text-green-400" />
-                </div>
-                <a
-                  href="tel:+31338508900"
-                  className="text-gray-300 text-sm hover:text-white transition-colors"
-                >
-                  +31 33 850 89 00
-                </a>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-green-400" />
-                </div>
-                <a
-                  href="mailto:info@bespaarcheckenergie.nl"
-                  className="text-gray-300 text-sm hover:text-white transition-colors"
-                >
-                  info@bespaarcheckenergie.nl
-                </a>
-              </div>
-            </div>
-
-            {/* Certifications */}
-            <div className="mt-10">
-              <div className="flex items-center gap-2 mb-3">
-                <Award className="w-4 h-4 text-gray-400" />
-                <p className="text-gray-400 text-sm font-medium">Certificeringen</p>
-              </div>
-              <div className="flex gap-3">
-                <span className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-gray-300 transition-colors">
-                  ISO 50001
-                </span>
-                <span className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-gray-300 transition-colors">
-                  ESCO
-                </span>
-              </div>
-            </div>
+          <div className="rounded-lg border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
+              {text.contactLabel}
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {text.title}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+              {text.contactText}
+            </p>
+            <a
+              href="mailto:info@bespaarcheck.net"
+              className="mt-6 inline-flex w-full items-center justify-between gap-3 rounded-lg bg-emerald-600 px-5 py-4 text-left font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all hover:-translate-y-0.5 hover:bg-emerald-700 dark:bg-sky-600 dark:hover:bg-sky-500"
+            >
+              <span className="inline-flex items-center gap-3">
+                <Mail className="h-5 w-5" />
+                info@bespaarcheck.net
+              </span>
+              <ArrowRight className="h-5 w-5 flex-shrink-0" />
+            </a>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-gray-700/50">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} BespaarCheck. Alle rechten voorbehouden.
-            </p>
-            <div className="flex flex-wrap justify-center gap-6">
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Privacybeleid
+        <div className="mt-8 grid gap-8 border-t border-gray-100 dark:border-slate-800 pt-8 md:grid-cols-[1fr_auto] md:items-center">
+          <nav className="flex flex-wrap gap-x-6 gap-y-3" aria-label={text.navLabel}>
+            {text.links.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-gray-600 transition-colors hover:text-emerald-700 dark:text-gray-300 dark:hover:text-emerald-300"
+              >
+                {link.label}
               </a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Algemene voorwaarden
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Cookie beleid
-              </a>
-            </div>
-          </div>
+            ))}
+          </nav>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            © {new Date().getFullYear()} BespaarCheck. {text.copyright}
+          </p>
         </div>
       </div>
     </footer>
