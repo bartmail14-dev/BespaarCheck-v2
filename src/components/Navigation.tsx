@@ -97,7 +97,7 @@ export function Navigation() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 border-b bg-white/95 backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/95 ${
+      className={`fixed top-0 left-0 right-0 border-b bg-white/95 backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-[#020617] ${
         isMenuOpen
           ? 'z-[70] border-gray-100 shadow-xl shadow-slate-900/10 dark:shadow-black/30'
           : 'z-50 border-gray-100 shadow-sm shadow-slate-900/5 dark:shadow-black/20'
@@ -140,7 +140,7 @@ export function Navigation() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-3 w-60 material-card bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+                <div className="absolute top-full left-0 mt-3 w-60 material-card bg-white p-2 dark:border-slate-800 dark:bg-[#020617]">
                   <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.heatPump}
                   </a>
@@ -260,7 +260,7 @@ export function Navigation() {
           }`}
         >
           <div
-            className={`rounded-lg border bg-white transition-all duration-500 dark:bg-slate-900 ${
+            className={`rounded-lg border bg-white transition-all duration-500 dark:bg-[#020617] ${
               isMenuOpen
                 ? 'border-gray-100 shadow-lg shadow-slate-900/10 dark:border-slate-800 dark:shadow-black/30'
                 : 'border-transparent shadow-none'
