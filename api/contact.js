@@ -303,7 +303,7 @@ async function sendPostmarkEmail(email) {
       'X-Postmark-Server-Token': token,
     },
     body: JSON.stringify({
-      From: process.env.POSTMARK_FROM_EMAIL || 'analytics@comcamenergy.com',
+      From: process.env.POSTMARK_FROM_EMAIL || 'info@bespaarcheck.net',
       To: process.env.CONTACT_TO_EMAIL || 'ict@comcamenergy.com',
       Subject: email.subject,
       HtmlBody: email.htmlBody,
