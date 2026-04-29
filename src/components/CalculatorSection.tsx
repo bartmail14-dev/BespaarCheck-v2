@@ -239,6 +239,13 @@ interface CalculationResult {
   totalInvestment: number;
 }
 
+interface CalculatorInsight {
+  summary: string;
+  nextSteps: string[];
+  attentionPoints: string[];
+  confidenceNote: string;
+}
+
 export function CalculatorSection() {
   const { isDark } = useTheme();
   const { isEnglish } = useLanguage();
@@ -268,6 +275,8 @@ export function CalculatorSection() {
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [insightStatus, setInsightStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [calculatorInsight, setCalculatorInsight] = useState<CalculatorInsight | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -333,6 +342,11 @@ export function CalculatorSection() {
         prepareRequest: 'Send non-binding request',
         mailOpened: 'Your request has been sent. A colleague can calmly look at the possibilities with you. You are not committed to anything.',
         mailError: 'Something went wrong while sending. Email directly to',
+        aiTitle: 'Smart interpretation',
+        aiLoading: 'Gemini is interpreting your result...',
+        aiUnavailable: 'The AI interpretation is temporarily unavailable. The calculation above remains usable.',
+        nextSteps: 'Logical next steps',
+        attentionPoints: 'Worth checking',
       }
     : {
         chip: 'Direct inzicht',
@@ -393,6 +407,11 @@ export function CalculatorSection() {
         prepareRequest: 'Verstuur vrijblijvende aanvraag',
         mailOpened: 'Uw aanvraag is verzonden. Een collega kan rustig meekijken naar de mogelijkheden. U zit nergens aan vast.',
         mailError: 'Er ging iets mis bij het versturen. Mail rechtstreeks naar',
+        aiTitle: 'Slimme toelichting',
+        aiLoading: 'Gemini duidt uw resultaat...',
+        aiUnavailable: 'De AI-toelichting is tijdelijk niet beschikbaar. De berekening hierboven blijft gewoon bruikbaar.',
+        nextSteps: 'Logische vervolgstappen',
+        attentionPoints: 'Goed om te controleren',
       };
 
   // Fetch energy prices on mount
@@ -709,6 +728,58 @@ export function CalculatorSection() {
     return lines.join('\n');
   };
 
+  const requestCalculatorInsight = useCallback(async (calculatedResults: CalculationResult) => {
+    setInsightStatus('loading');
+    setCalculatorInsight(null);
+
+    try {
+      const response = await fetch('/api/calculator-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          language: isEnglish ? 'en' : 'nl',
+          calculation: {
+            input: {
+              businessType: businessTypes.find(type => type.value === formData.businessType)?.label || formData.businessType,
+              buildingSize: formData.buildingSize,
+              electricityUsage: formData.electricityUsage,
+              gasUsage: formData.gasUsage,
+              existingInstallations: formData.existingInstallations,
+              solarFeedIn: formData.solarFeedIn,
+              contractType: formData.contractType || 'Niet opgegeven',
+              priorities: formData.priorities,
+            },
+            result: {
+              currentCosts: calculatedResults.currentCosts,
+              yearlySavings: calculatedResults.yearlySavings,
+              co2Reduction: calculatedResults.co2Reduction,
+              paybackPeriod: calculatedResults.paybackPeriod,
+              totalInvestment: calculatedResults.totalInvestment,
+              recommendations: calculatedResults.recommendations,
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Calculator insight endpoint returned an error');
+      }
+
+      const data = (await response.json()) as { insight?: CalculatorInsight };
+      if (!data.insight) {
+        throw new Error('No insight returned');
+      }
+
+      setCalculatorInsight(data.insight);
+      setInsightStatus('ready');
+    } catch (error) {
+      console.warn('BespaarCheck calculator insight niet beschikbaar:', error);
+      setInsightStatus('error');
+    }
+  }, [formData, isEnglish]);
+
   const submitLead = async () => {
     if (isSubmitting) return;
     // Honeypot spam check
@@ -783,9 +854,11 @@ export function CalculatorSection() {
       setIsCalculating(true);
       setCalculationPhase(0);
       setTimeout(() => {
+        const nextResults = calculateResults();
         setIsCalculating(false);
-        setResults(calculateResults());
+        setResults(nextResults);
         setShowResults(true);
+        void requestCalculatorInsight(nextResults);
       }, 1500);
     }
   };
@@ -811,6 +884,8 @@ export function CalculatorSection() {
   const resetCalculator = () => {
     setShowResults(false);
     setResults(null);
+    setInsightStatus('idle');
+    setCalculatorInsight(null);
     setCurrentStep(1);
     setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '', honeypot: '' });
   };
@@ -851,17 +926,17 @@ export function CalculatorSection() {
         />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-5 sm:px-6 lg:px-8">
+      <div className="relative max-w-5xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 sm:mb-12">
           <div className="material-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold mb-4">
             <Sparkles className="w-4 h-4" />
             {t.chip}
           </div>
-          <h2 className="material-title text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="material-title text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-gray-900 dark:text-white mb-4">
             {t.title}
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base leading-7 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto sm:text-lg">
             {t.intro}
           </p>
           {isLoadingPrices && (
@@ -906,8 +981,13 @@ export function CalculatorSection() {
 
             {/* Corner accents */}
             {/* Clean Stepper */}
-            <div className="px-4 sm:px-8 pt-8 pb-6">
-              <div className="flex items-center justify-between relative">
+            <div className="px-3 sm:px-8 pt-5 sm:pt-8 pb-4 sm:pb-6">
+              <div className="mb-3 flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 dark:bg-gray-900 dark:text-gray-300 sm:hidden">
+                <span>{steps[currentStepIndex]?.label}</span>
+                <span>{currentStepIndex + 1} / {steps.length}</span>
+              </div>
+              <div className="overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
+              <div className="flex items-center justify-between relative min-w-[560px] sm:min-w-0">
                 {/* Connection line */}
                 <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                   <div
@@ -949,10 +1029,11 @@ export function CalculatorSection() {
                   );
                 })}
               </div>
+              </div>
             </div>
 
             {/* Form Content */}
-            <div className="px-4 sm:px-8 pb-6 sm:pb-8">
+            <div className="px-3 sm:px-8 pb-5 sm:pb-8">
               <div className="rounded-lg p-4 sm:p-8 min-h-[350px] bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700">
                 {/* Calculation Animation */}
                 {isCalculating && (
@@ -1005,11 +1086,11 @@ export function CalculatorSection() {
 
                     {/* Current costs context */}
                     <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm text-center">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm text-center leading-6">
                         Uw geschatte huidige energiekosten: <span className="font-bold text-gray-900 dark:text-white">€{results.currentCosts.total.toLocaleString()}</span>/jaar
                         <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} elektra + €{results.currentCosts.gas.toLocaleString()} gas)</span>
                       </p>
-                      <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+                      <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
                         {energyPrices.isLive ?(
                           <>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
@@ -1040,16 +1121,16 @@ export function CalculatorSection() {
                           key={i}
                           className={`p-4 rounded-lg ${stat.bg} border ${stat.border}`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
                             <div
                               className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                               style={{ backgroundColor: stat.color }}
                             >
                               <stat.icon className="w-5 h-5 text-white" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-gray-500 dark:text-gray-400 text-xs">{stat.label}</p>
-                              <p className="text-2xl font-bold" style={{ color: stat.color }}>
+                              <p className="text-xl font-bold sm:text-2xl" style={{ color: stat.color }}>
                                 {stat.value}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">{stat.sub}</span>
                               </p>
                             </div>
@@ -1080,22 +1161,22 @@ export function CalculatorSection() {
                                 key={i}
                                 className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
                               >
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-3 min-w-0">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                                  <div className="flex items-start gap-3 min-w-0 sm:items-center">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                       rec.priority === 'high' ?'bg-emerald-500' : rec.priority === 'medium' ?'bg-amber-500' : 'bg-gray-400'
                                     }`}>
                                       <span className="text-white font-bold text-sm">{i + 1}</span>
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="font-medium text-gray-900 dark:text-white truncate">{rec.name}</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      <p className="font-medium leading-6 text-gray-900 dark:text-white sm:truncate">{rec.name}</p>
+                                      <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
                                         {rec.investment > 0 ?`Investering: €${rec.investment.toLocaleString()}` : 'Geen investering nodig'}
                                         {rec.paybackYears > 0 && ` • Terugverdientijd: ${rec.paybackYears} jaar`}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="text-right flex-shrink-0">
+                                  <div className="text-left flex-shrink-0 sm:text-right">
                                     <p className="font-bold text-emerald-600 dark:text-emerald-400">€{rec.yearlySavings.toLocaleString()}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">/jaar</p>
                                   </div>
@@ -1109,6 +1190,56 @@ export function CalculatorSection() {
                             </p>
                           )}
                         </>
+                      )}
+                    </div>
+
+                    {/* Gemini interpretation */}
+                    <div className="mb-6 rounded-lg border border-sky-100 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
+                      <div className="mb-3 flex items-center gap-3">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white">
+                          <Sparkles className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{t.aiTitle}</h4>
+                          {insightStatus === 'loading' && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t.aiLoading}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {insightStatus === 'ready' && calculatorInsight ? (
+                        <div className="space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-200">
+                          <p>{calculatorInsight.summary}</p>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <p className="mb-2 font-semibold text-gray-900 dark:text-white">{t.nextSteps}</p>
+                              <ul className="space-y-2">
+                                {calculatorInsight.nextSteps.map((item) => (
+                                  <li key={item} className="flex gap-2">
+                                    <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="mb-2 font-semibold text-gray-900 dark:text-white">{t.attentionPoints}</p>
+                              <ul className="space-y-2">
+                                {calculatorInsight.attentionPoints.map((item) => (
+                                  <li key={item} className="flex gap-2">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600 dark:text-sky-300" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{calculatorInsight.confidenceNote}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">
+                          {insightStatus === 'loading' ? t.aiLoading : t.aiUnavailable}
+                        </p>
                       )}
                     </div>
 
@@ -1600,7 +1731,7 @@ export function CalculatorSection() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           {[
                             { id: 'cost', label: 'Kostenbesparing', desc: 'Lagere energierekening', icon: Euro, color: '#f59e0b' },
                             { id: 'sustainability', label: 'Duurzaamheid', desc: 'Groene voetafdruk', icon: Leaf, color: '#10b981' },
