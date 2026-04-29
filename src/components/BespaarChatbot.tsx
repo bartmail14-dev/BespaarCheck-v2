@@ -22,7 +22,7 @@ const chatCopy = {
     close: 'Sluit chat',
     thinking: 'Check denkt mee...',
     unavailable:
-      'Ik kan nu geen verbinding maken met de AI. Controleer of de chatbot API en server key goed zijn ingesteld. U kunt natuurlijk wel direct contact opnemen via info@bespaarcheck.net.',
+      'Ik kan nu geen verbinding maken met de chatbot. U kunt natuurlijk wel direct contact opnemen via info@bespaarcheck.net.',
     followUpTitle: 'Vrijblijvend laten opvolgen?',
     followUpBody:
       'Klik alleen als u deze contactvraag naar BespaarCheck wilt sturen. Het is vrijblijvend en u zit nergens aan vast.',
@@ -53,7 +53,7 @@ const chatCopy = {
     close: 'Close chat',
     thinking: 'Check is thinking along...',
     unavailable:
-      'I cannot connect to the AI right now. Please check whether the chatbot API and server key are configured correctly. You can still contact us directly at info@bespaarcheck.net.',
+      'I cannot connect to the chatbot right now. You can still contact us directly at info@bespaarcheck.net.',
     followUpTitle: 'Follow up without obligation?',
     followUpBody:
       'Only click if you want to send this contact request to BespaarCheck. It is non-binding and you are not committed to anything.',

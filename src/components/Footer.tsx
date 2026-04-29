@@ -17,6 +17,7 @@ export function Footer() {
           { label: 'Saving options', href: '#savings' },
           { label: 'Rules and regulations', href: '#regelgeving' },
           { label: 'Frequently asked questions', href: '#faq' },
+          { label: 'Privacy statement', href: '#privacy' },
           { label: 'Start the check', href: '#calculator' },
         ],
       }
@@ -33,6 +34,7 @@ export function Footer() {
           { label: 'Bespaarmogelijkheden', href: '#savings' },
           { label: 'Wet- en regelgeving', href: '#regelgeving' },
           { label: 'Veelgestelde vragen', href: '#faq' },
+          { label: 'Privacyverklaring', href: '#privacy' },
           { label: 'Doe de check', href: '#calculator' },
         ],
       };

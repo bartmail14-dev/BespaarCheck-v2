@@ -69,7 +69,7 @@ function normalizeInsight(data, language) {
           sanityLevel: 'review',
           sanitySummary: 'The outcome looks usable as an initial estimate, but the underlying assumptions should be checked before making decisions.',
           sanityChecks: ['Compare the savings percentage with the current annual energy costs', 'Check whether investment and payback time fit the selected measures'],
-          confidenceNote: 'This is an AI explanation of the calculator result, not financial or legal advice.',
+          confidenceNote: 'This is an indicative plausibility check of the calculator result, not financial or legal advice.',
         }
       : {
           summary: 'De berekening geeft een eerste richting. Een specialist kan de exacte haalbaarheid vrijblijvend controleren.',
@@ -78,7 +78,7 @@ function normalizeInsight(data, language) {
           sanityLevel: 'controleren',
           sanitySummary: 'De uitkomst is bruikbaar als eerste indicatie, maar de aannames moeten worden gecontroleerd voordat er beslissingen op worden gebaseerd.',
           sanityChecks: ['Vergelijk het besparingspercentage met de huidige jaarlijkse energiekosten', 'Controleer of investering en terugverdientijd passen bij de gekozen maatregelen'],
-          confidenceNote: 'Dit is een AI-toelichting op de calculatoruitkomst, geen financieel of juridisch advies.',
+          confidenceNote: 'Dit is een indicatieve plausibiliteitscontrole van de calculatoruitkomst, geen financieel of juridisch advies.',
         };
 
   if (!data || typeof data !== 'object') return fallback;
@@ -111,7 +111,7 @@ function buildPrompt(body) {
   return `
 ${instruction}
 
-You are adding the final AI explanation layer to a deterministic energy saving calculator. Do not change the numbers. Do not invent guarantees.
+You are adding a critical plausibility check to a deterministic energy saving calculator. Do not change the numbers. Do not invent guarantees.
 
 Perform a strict sanity check before writing the explanation:
 1. Check whether yearly savings are plausible compared with current annual costs.

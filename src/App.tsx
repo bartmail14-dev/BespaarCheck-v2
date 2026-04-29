@@ -17,6 +17,9 @@ const RegulationsSection = lazy(() =>
 const FAQSection = lazy(() =>
   import('./components/FAQSection').then((module) => ({ default: module.FAQSection }))
 );
+const PrivacySection = lazy(() =>
+  import('./components/PrivacySection').then((module) => ({ default: module.PrivacySection }))
+);
 const Footer = lazy(() =>
   import('./components/Footer').then((module) => ({ default: module.Footer }))
 );
@@ -79,6 +82,7 @@ function App() {
               <CalculatorSection />
               <RegulationsSection />
               <FAQSection />
+              <PrivacySection />
             </Suspense>
           </main>
           <Suspense fallback={<SectionFallback />}>

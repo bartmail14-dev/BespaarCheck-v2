@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, RefreshCw, Send, AlertCircle, Check } from 'lucide-react';
+import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, AlertCircle, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -266,6 +266,7 @@ export function CalculatorSection() {
     contactName: '',
     companyName: '',
     email: '',
+    privacyAccepted: false,
     honeypot: '',
   });
   const [activeDropdown, setActiveDropdown] = useState(false);
@@ -275,7 +276,6 @@ export function CalculatorSection() {
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [insightStatus, setInsightStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [calculatorInsight, setCalculatorInsight] = useState<CalculatorInsight | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -328,23 +328,25 @@ export function CalculatorSection() {
         prioritiesTitle: 'What matters to you?',
         prioritiesIntro: 'We rank the recommendations based on your choice',
         prioritiesNote: 'The order of recommendations is aligned with your priorities',
-        contactTitle: 'Create your report',
-        contactIntro: 'View your analysis immediately and optionally prepare a non-binding request',
-        contactBox: 'After entering your details, you immediately see a personal savings report with concrete recommendations and an indication of your savings potential. 100% free and non-binding; you are not committed to anything.',
+        contactTitle: 'Receive your report by email',
+        contactIntro: 'Enter your details and we will send the savings report to your mailbox',
+        contactBox: 'After submitting, you receive the indicative savings report by email. The check is free and completely non-binding; you are not committed to anything.',
         name: 'Your name',
         company: 'Company name',
         email: 'Email address',
-        privacy: 'Your details are only used to send this non-binding request to BespaarCheck. This does not create an agreement and you are not committed to anything.',
+        privacy: 'I have read the privacy statement and agree that BespaarCheck may process my details to send the report and follow up on this non-binding request.',
+        privacyLink: 'privacy statement',
+        privacyRequired: 'Accept the privacy statement to receive the report',
         previous: 'Previous',
         next: 'Next',
-        calculate: 'Calculate saving',
-        preparing: 'Sending...',
-        prepareRequest: 'Send non-binding request',
-        mailOpened: 'Your request has been sent. A colleague can calmly look at the possibilities with you. You are not committed to anything.',
+        calculate: 'Email my report',
+        preparing: 'Checking and sending...',
+        prepareRequest: 'Email my report',
+        mailOpened: 'Your report has been sent by email. A colleague can calmly look at the possibilities with you. You are not committed to anything.',
         mailError: 'Something went wrong while sending. Email directly to',
-        aiTitle: 'Smart interpretation',
-        aiLoading: 'Gemini is interpreting your result...',
-        aiUnavailable: 'The AI interpretation is temporarily unavailable. The calculation above remains usable.',
+        aiTitle: 'Critical result check',
+        aiLoading: 'The result is being checked...',
+        aiUnavailable: 'The extra result check is temporarily unavailable. The calculation remains usable.',
         sanityTitle: 'Sanity check',
         nextSteps: 'Logical next steps',
         attentionPoints: 'Worth checking',
@@ -394,23 +396,25 @@ export function CalculatorSection() {
         prioritiesTitle: 'Wat is belangrijk voor u?',
         prioritiesIntro: 'We rangschikken de aanbevelingen op basis van uw keuze',
         prioritiesNote: 'De volgorde van aanbevelingen wordt afgestemd op uw prioriteiten',
-        contactTitle: 'Maak uw rapport',
-        contactIntro: 'Bekijk direct uw analyse en zet desgewenst een vrijblijvende aanvraag klaar',
-        contactBox: 'Na het invullen ziet u direct een persoonlijk besparingsrapport met concrete aanbevelingen en een indicatie van uw besparingspotentieel. 100% gratis en vrijblijvend; u zit nergens aan vast.',
+        contactTitle: 'Ontvang uw rapport per mail',
+        contactIntro: 'Vul uw gegevens in en wij sturen het besparingsrapport naar uw mailbox',
+        contactBox: 'Na het indienen ontvangt u het indicatieve besparingsrapport per mail. De check is gratis en geheel vrijblijvend; u zit nergens aan vast.',
         name: 'Uw naam',
         company: 'Bedrijfsnaam',
         email: 'E-mailadres',
-        privacy: 'Uw gegevens worden alleen gebruikt om deze vrijblijvende aanvraag naar BespaarCheck te sturen. Dit leidt niet tot een overeenkomst en u zit nergens aan vast.',
+        privacy: 'Ik heb de privacyverklaring gelezen en ga ermee akkoord dat BespaarCheck mijn gegevens verwerkt om het rapport te versturen en deze vrijblijvende aanvraag op te volgen.',
+        privacyLink: 'privacyverklaring',
+        privacyRequired: 'Accepteer de privacyverklaring om het rapport te ontvangen',
         previous: 'Vorige',
         next: 'Volgende',
-        calculate: 'Bereken besparing',
-        preparing: 'Versturen...',
-        prepareRequest: 'Verstuur vrijblijvende aanvraag',
-        mailOpened: 'Uw aanvraag is verzonden. Een collega kan rustig meekijken naar de mogelijkheden. U zit nergens aan vast.',
+        calculate: 'Mail mijn rapport',
+        preparing: 'Controleren en versturen...',
+        prepareRequest: 'Mail mijn rapport',
+        mailOpened: 'Uw rapport is per mail verzonden. Een collega kan rustig meekijken naar de mogelijkheden. U zit nergens aan vast.',
         mailError: 'Er ging iets mis bij het versturen. Mail rechtstreeks naar',
-        aiTitle: 'Slimme toelichting',
-        aiLoading: 'Gemini duidt uw resultaat...',
-        aiUnavailable: 'De AI-toelichting is tijdelijk niet beschikbaar. De berekening hierboven blijft gewoon bruikbaar.',
+        aiTitle: 'Kritische resultaatcontrole',
+        aiLoading: 'Het resultaat wordt gecontroleerd...',
+        aiUnavailable: 'De extra resultaatcontrole is tijdelijk niet beschikbaar. De berekening blijft gewoon bruikbaar.',
         sanityTitle: 'Sanitycheck',
         nextSteps: 'Logische vervolgstappen',
         attentionPoints: 'Goed om te controleren',
@@ -697,41 +701,55 @@ export function CalculatorSection() {
       errors.email = isEnglish ? 'Enter a valid email address' : 'Vul een geldig e-mailadres in';
     }
 
+    if (!formData.privacyAccepted) {
+      errors.privacyAccepted = t.privacyRequired;
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const buildLeadSummary = (): string => {
-    const businessLabel = businessTypes.find(t => t.value === formData.businessType)?.label || formData.businessType;
+  const buildMailSummary = (calculatedResults: CalculationResult, insight?: CalculatorInsight | null): string => {
+    const businessLabel = businessTypes.find(type => type.value === formData.businessType)?.label || formData.businessType;
     const lines = [
       `Bedrijfstype: ${businessLabel}`,
-      `Pand: ${formData.buildingSize.toLocaleString()} m²`,
+      `Pand: ${formData.buildingSize.toLocaleString()} m2`,
       `Elektriciteit: ${formData.electricityUsage.toLocaleString()} kWh/jaar`,
-      `Gas: ${formData.gasUsage.toLocaleString()} m³/jaar`,
+      `Gas: ${formData.gasUsage.toLocaleString()} m3/jaar`,
       `Contract: ${formData.contractType || 'Niet opgegeven'}`,
-      `Bestaande installaties: ${formData.existingInstallations.length > 0 ?formData.existingInstallations.join(', ') : 'Geen'}`,
-      `Prioriteiten: ${formData.priorities.length > 0 ?formData.priorities.join(', ') : 'Niet opgegeven'}`,
+      `Bestaande installaties: ${formData.existingInstallations.length > 0 ? formData.existingInstallations.join(', ') : 'Geen'}`,
+      `Prioriteiten: ${formData.priorities.length > 0 ? formData.priorities.join(', ') : 'Niet opgegeven'}`,
+      '',
+      '--- RESULTATEN ---',
+      `Huidige kosten: EUR ${calculatedResults.currentCosts.total.toLocaleString()}/jaar`,
+      `Potentiele besparing: EUR ${calculatedResults.yearlySavings.toLocaleString()}/jaar`,
+      `CO2 reductie: ${calculatedResults.co2Reduction} ton/jaar`,
+      `Gem. terugverdientijd: ${calculatedResults.paybackPeriod} jaar`,
+      '',
+      'Aanbevolen maatregelen:',
     ];
 
-    if (results) {
-      lines.push('');
-      lines.push('--- RESULTATEN ---');
-      lines.push(`Huidige kosten: €${results.currentCosts.total.toLocaleString()}/jaar`);
-      lines.push(`Potentiële besparing: €${results.yearlySavings.toLocaleString()}/jaar`);
-      lines.push(`CO₂ reductie: ${results.co2Reduction} ton/jaar`);
-      lines.push(`Gem. terugverdientijd: ${results.paybackPeriod} jaar`);
-      lines.push('');
-      lines.push('Aanbevolen maatregelen:');
-      results.recommendations.forEach((rec, i) => {
-        lines.push(`${i + 1}. ${rec.name}: €${rec.yearlySavings.toLocaleString()}/jaar besparing (investering: €${rec.investment.toLocaleString()}, terugverdientijd: ${rec.paybackYears} jaar)`);
+    if (calculatedResults.recommendations.length === 0) {
+      lines.push('Geen directe standaardmaatregelen gevonden op basis van de invoer.');
+    } else {
+      calculatedResults.recommendations.forEach((rec, index) => {
+        lines.push(`${index + 1}. ${rec.name}: EUR ${rec.yearlySavings.toLocaleString()}/jaar besparing, investering EUR ${rec.investment.toLocaleString()}, terugverdientijd ${rec.paybackYears} jaar`);
       });
+    }
+
+    if (insight) {
+      lines.push('');
+      lines.push('--- KRITISCHE CONTROLE ---');
+      lines.push(insight.sanitySummary);
+      insight.sanityChecks.forEach((check) => lines.push(`- ${check}`));
+      lines.push('');
+      lines.push(insight.confidenceNote);
     }
 
     return lines.join('\n');
   };
 
-  const requestCalculatorInsight = useCallback(async (calculatedResults: CalculationResult) => {
-    setInsightStatus('loading');
+  const requestCalculatorInsight = useCallback(async (calculatedResults: CalculationResult): Promise<CalculatorInsight | null> => {
     setCalculatorInsight(null);
 
     try {
@@ -783,14 +801,14 @@ export function CalculatorSection() {
       }
 
       setCalculatorInsight(data.insight);
-      setInsightStatus('ready');
+      return data.insight;
     } catch (error) {
       console.warn('BespaarCheck calculator insight niet beschikbaar:', error);
-      setInsightStatus('error');
+      return null;
     }
   }, [formData, isEnglish]);
 
-  const submitLead = async () => {
+  const submitLead = async (calculatedResults: CalculationResult, insight?: CalculatorInsight | null) => {
     if (isSubmitting) return;
     // Honeypot spam check
     if (formData.honeypot) {
@@ -815,6 +833,7 @@ export function CalculatorSection() {
             company: formData.companyName,
             email: formData.email,
           },
+          privacyAccepted: formData.privacyAccepted,
           report: {
             businessType: businessTypes.find(type => type.value === formData.businessType)?.label || formData.businessType,
             buildingSize: `${formData.buildingSize.toLocaleString()} m2`,
@@ -823,10 +842,19 @@ export function CalculatorSection() {
             contractType: formData.contractType || 'Niet opgegeven',
             existingInstallations: formData.existingInstallations.length > 0 ?formData.existingInstallations.join(', ') : 'Geen',
             priorities: formData.priorities.length > 0 ?formData.priorities.join(', ') : 'Niet opgegeven',
-            yearlySavings: results ?`EUR ${results.yearlySavings.toLocaleString()}/jaar` : '',
-            totalInvestment: results ?`EUR ${results.totalInvestment.toLocaleString()}` : '',
-            paybackPeriod: results ?`${results.paybackPeriod} jaar` : '',
-            summary: buildLeadSummary(),
+            yearlySavings: `EUR ${calculatedResults.yearlySavings.toLocaleString()}/jaar`,
+            totalInvestment: `EUR ${calculatedResults.totalInvestment.toLocaleString()}`,
+            paybackPeriod: `${calculatedResults.paybackPeriod} jaar`,
+            currentCosts: `EUR ${calculatedResults.currentCosts.total.toLocaleString()}/jaar`,
+            co2Reduction: `${calculatedResults.co2Reduction} ton/jaar`,
+            recommendations: calculatedResults.recommendations.map((rec) => ({
+              name: rec.name,
+              yearlySavings: `EUR ${rec.yearlySavings.toLocaleString()}/jaar`,
+              investment: `EUR ${rec.investment.toLocaleString()}`,
+              paybackYears: `${rec.paybackYears} jaar`,
+            })),
+            insight,
+            summary: buildMailSummary(calculatedResults, insight),
           },
         }),
       });
@@ -843,8 +871,8 @@ export function CalculatorSection() {
     }
   };
 
-  const handleNext = () => {
-    if (isTransitioning) return;
+  const handleNext = async () => {
+    if (isTransitioning || isCalculating || isSubmitting) return;
     const currentIndex = steps.findIndex(s => s.id === currentStep);
     const isLastStep = currentIndex === steps.length - 1;
 
@@ -862,14 +890,19 @@ export function CalculatorSection() {
       }, 200);
     } else {
       setIsCalculating(true);
+      setSubmitStatus('idle');
       setCalculationPhase(0);
-      setTimeout(() => {
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 900));
         const nextResults = calculateResults();
-        setIsCalculating(false);
         setResults(nextResults);
+        const insight = await requestCalculatorInsight(nextResults);
+        await submitLead(nextResults, insight);
         setShowResults(true);
-        void requestCalculatorInsight(nextResults);
-      }, 1500);
+      } finally {
+        setIsCalculating(false);
+      }
     }
   };
 
@@ -894,10 +927,11 @@ export function CalculatorSection() {
   const resetCalculator = () => {
     setShowResults(false);
     setResults(null);
-    setInsightStatus('idle');
     setCalculatorInsight(null);
+    setSubmitStatus('idle');
+    setFormErrors({});
     setCurrentStep(1);
-    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '', honeypot: '' });
+    setFormData({ businessType: '', buildingSize: 500, electricityUsage: 50000, gasUsage: 15000, existingInstallations: [], solarFeedIn: 0, contractType: '', priorities: [], contactName: '', companyName: '', email: '', privacyAccepted: false, honeypot: '' });
   };
 
   const formatNumber = (num: number) => {
@@ -1082,261 +1116,59 @@ export function CalculatorSection() {
                   </div>
                 )}
 
-                {/* Results */}
-                {showResults && results && !isCalculating && (
+                {/* Mail confirmation */}
+                {showResults && results && !isCalculating && (submitStatus === 'success' || submitStatus === 'error') && (
                   <div className="animate-fade-in">
-                    {/* Success header */}
-                    <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-emerald-500 mb-3">
-                        <CheckCircle className="w-7 h-7 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t.resultsTitle}</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">{t.resultsSubtitle}</p>
-                    </div>
-
-                    {/* Current costs context */}
-                    <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm text-center leading-6">
-                        {t.currentCosts}: <span className="font-bold text-gray-900 dark:text-white">€{results.currentCosts.total.toLocaleString()}</span>/{t.year}
-                        <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} {t.electricity} + €{results.currentCosts.gas.toLocaleString()} gas)</span>
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
-                        {energyPrices.isLive ?(
-                          <>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              {t.livePrices}
-                            </span>
-                            <span className="text-gray-400 dark:text-gray-500">
-                              €{energyPrices.electricity.toFixed(3)}/kWh • €{energyPrices.gas.toFixed(2)}/m³
-                            </span>
-                          </>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
-                            <RefreshCw className="w-3 h-3" />
-                            {t.indicativePrices}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                      {[
-                        { label: 'Potentiële besparing', value: `€${results.yearlySavings.toLocaleString()}`, sub: '/jaar', icon: Euro, color: '#0891b2', bg: 'bg-cyan-50 dark:bg-cyan-900/30', border: 'border-cyan-100 dark:border-cyan-800' },
-                        { label: 'CO₂ reductie', value: `${results.co2Reduction}`, sub: ' ton/jaar', icon: Leaf, color: '#10b981', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-emerald-100 dark:border-emerald-800' },
-                        { label: 'Gem. terugverdientijd', value: `${results.paybackPeriod}`, sub: ' jaar', icon: TrendingDown, color: '#8b5cf6', bg: 'bg-violet-50 dark:bg-violet-900/30', border: 'border-violet-100 dark:border-violet-800' },
-                      ].map((stat, i) => (
-                        <div
-                          key={i}
-                          className={`p-4 rounded-lg ${stat.bg} border ${stat.border}`}
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: stat.color }}
-                            >
-                              <stat.icon className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-gray-500 dark:text-gray-400 text-xs">{stat.label}</p>
-                              <p className="text-xl font-bold sm:text-2xl" style={{ color: stat.color }}>
-                                {stat.value}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">{stat.sub}</span>
-                              </p>
-                            </div>
-                          </div>
+                    {submitStatus === 'success' ? (
+                      <div className="mx-auto max-w-2xl rounded-lg border border-emerald-200 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-900/30 sm:p-8">
+                        <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500">
+                          <Check className="h-7 w-7 text-white" />
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Detailed Recommendations */}
-                    <div className="mb-6">
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-emerald-500" />
-                        {isEnglish ? 'Recommended measures' : 'Aanbevolen maatregelen'}
-                      </h4>
-                      {results.recommendations.length === 0 ?(
-                        <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
-                          <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-                          <p className="font-semibold text-gray-900 dark:text-white mb-1">{isEnglish ? 'Good progress' : 'Goed bezig!'}</p>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            {isEnglish ? 'Based on your input, no direct standard saving measures were found. You are already on the right track, or your consumption is too low for standard measures. Contact us for personal advice.' : 'Op basis van uw invoer zijn er geen directe besparingsmaatregelen gevonden. U bent al goed op weg, of uw verbruik is te laag voor standaard maatregelen. Neem contact op voor persoonlijk advies.'}
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="space-y-2">
-                            {results.recommendations.map((rec, i) => (
-                              <div
-                                key={i}
-                                className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
-                              >
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                                  <div className="flex items-start gap-3 min-w-0 sm:items-center">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                      rec.priority === 'high' ?'bg-emerald-500' : rec.priority === 'medium' ?'bg-amber-500' : 'bg-gray-400'
-                                    }`}>
-                                      <span className="text-white font-bold text-sm">{i + 1}</span>
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="font-medium leading-6 text-gray-900 dark:text-white sm:truncate">{rec.name}</p>
-                                      <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
-                                        {rec.investment > 0 ?`Investering: €${rec.investment.toLocaleString()}` : 'Geen investering nodig'}
-                                        {rec.paybackYears > 0 && ` • Terugverdientijd: ${rec.paybackYears} jaar`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-left flex-shrink-0 sm:text-right">
-                                    <p className="font-bold text-emerald-600 dark:text-emerald-400">€{rec.yearlySavings.toLocaleString()}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">/jaar</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {results.totalInvestment > 0 && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                              Totale geschatte investering: €{results.totalInvestment.toLocaleString()}
-                            </p>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    {/* Gemini interpretation */}
-                    <div className="mb-6 rounded-lg border border-sky-100 bg-sky-50 p-4 dark:border-sky-900/60 dark:bg-sky-950/30">
-                      <div className="mb-3 flex items-center gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white">
-                          <Sparkles className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">{t.aiTitle}</h4>
-                          {insightStatus === 'loading' && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{t.aiLoading}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {insightStatus === 'ready' && calculatorInsight ? (
-                        <div className="space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-200">
-                          <p>{calculatorInsight.summary}</p>
-                          <div className="rounded-lg border border-amber-100 bg-white p-4 dark:border-amber-900/60 dark:bg-slate-950/50">
-                            <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <p className="font-semibold text-gray-900 dark:text-white">{t.sanityTitle}</p>
-                              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
-                                {calculatorInsight.sanityLevel}
-                              </span>
-                            </div>
-                            <p className="text-gray-700 dark:text-gray-200">{calculatorInsight.sanitySummary}</p>
-                            <ul className="mt-3 space-y-2">
-                              {calculatorInsight.sanityChecks.map((item) => (
-                                <li key={item} className="flex gap-2">
-                                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-300" />
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                              <p className="mb-2 font-semibold text-gray-900 dark:text-white">{t.nextSteps}</p>
-                              <ul className="space-y-2">
-                                {calculatorInsight.nextSteps.map((item) => (
-                                  <li key={item} className="flex gap-2">
-                                    <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="mb-2 font-semibold text-gray-900 dark:text-white">{t.attentionPoints}</p>
-                              <ul className="space-y-2">
-                                {calculatorInsight.attentionPoints.map((item) => (
-                                  <li key={item} className="flex gap-2">
-                                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600 dark:text-sky-300" />
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{calculatorInsight.confidenceNote}</p>
-                        </div>
-                      ) : (
-                        <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">
-                          {insightStatus === 'loading' ? t.aiLoading : t.aiUnavailable}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Disclaimer */}
-                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 mb-6">
-                      <p className="text-amber-800 dark:text-amber-200 text-xs text-center">
-                        {t.disclaimer}
-                      </p>
-                    </div>
-
-                    {/* CTA Section */}
-                    {submitStatus === 'success' ?(
-                      <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-center">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500 mb-3">
-                          <Check className="w-6 h-6 text-white" />
-                        </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">{isEnglish ? 'Request prepared' : 'Aanvraag klaargezet'}</h4>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {isEnglish ? 'Your report is on its way' : 'Uw rapport is onderweg'}
+                        </h3>
+                        <p className="mt-3 text-base leading-7 text-gray-600 dark:text-gray-300">
                           {t.mailOpened}
+                        </p>
+                        <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                          {isEnglish
+                            ? 'The report is sent to the email address you entered. Please also check spam or promotions folders if it is not visible within a few minutes.'
+                            : 'Het rapport wordt verzonden naar het ingevulde e-mailadres. Controleer ook spam of reclame als u het binnen enkele minuten nog niet ziet.'}
                         </p>
                         <button
                           onClick={resetCalculator}
-                          className="px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 hover:text-gray-800 transition-all"
+                          className="mt-6 rounded-lg border border-emerald-300 px-6 py-3 font-medium text-emerald-800 transition-all hover:bg-white dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950"
                         >
                           {t.newCalculation}
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        {submitStatus === 'error' && (
-                          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                            <p className="text-red-700 dark:text-red-300 text-sm">
-                              {t.mailError}{' '}
-                              <a href="mailto:info@bespaarcheck.net" className="underline font-medium">info@bespaarcheck.net</a>.
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="mx-auto max-w-2xl rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30 sm:p-8">
+                        <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-red-500">
+                          <AlertCircle className="h-7 w-7 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {isEnglish ? 'Sending failed' : 'Versturen is niet gelukt'}
+                        </h3>
+                        <p className="mt-3 text-base leading-7 text-gray-600 dark:text-gray-300">
+                          {t.mailError}{' '}
+                          <a href="mailto:info@bespaarcheck.net" className="font-semibold underline">
+                            info@bespaarcheck.net
+                          </a>.
+                        </p>
+                        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                           <button
-                            onClick={resetCalculator}
-                            className="px-6 py-3 rounded-lg font-medium border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                            onClick={() => void submitLead(results, calculatorInsight)}
+                            disabled={isSubmitting}
+                            className="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition-all hover:bg-emerald-700 disabled:cursor-wait disabled:bg-emerald-400"
                           >
-                            <span className="flex items-center gap-2">
-                              <ArrowRight className="w-4 h-4 rotate-180" />
-                              {t.newCalculation}
-                            </span>
+                            {isSubmitting ? t.preparing : isEnglish ? 'Try again' : 'Opnieuw proberen'}
                           </button>
                           <button
-                            onClick={submitLead}
-                            disabled={isSubmitting}
-                            className={`flex-1 px-8 py-4 rounded-lg font-semibold text-white transition-all ${
-                              isSubmitting
-                                ?'bg-emerald-400 cursor-wait'
-                                : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
-                            }`}
+                            onClick={resetCalculator}
+                            className="rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-all hover:bg-white dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                           >
-                            <span className="flex items-center justify-center gap-2">
-                              {isSubmitting ?(
-                                <>
-                                  {t.preparing}
-                                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                </>
-                              ) : (
-                                <>
-                                  {t.prepareRequest}
-                                  <Send className="w-5 h-5" />
-                                </>
-                              )}
-                            </span>
+                            {t.newCalculation}
                           </button>
                         </div>
                       </div>
@@ -1946,10 +1778,38 @@ export function CalculatorSection() {
                           />
                         </div>
 
-                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-                          <p className="text-center text-xs leading-5 text-gray-500 dark:text-gray-400">
-                            {t.privacy}
-                          </p>
+                        <div className={`mt-4 rounded-lg border p-4 dark:bg-gray-800 ${
+                          formErrors.privacyAccepted
+                            ? 'border-red-300 bg-red-50 dark:border-red-800'
+                            : 'border-gray-200 bg-gray-50 dark:border-gray-700'
+                        }`}>
+                          <label className="flex cursor-pointer items-start gap-3 text-left">
+                            <input
+                              type="checkbox"
+                              checked={formData.privacyAccepted}
+                              onChange={(e) => {
+                                setFormData({ ...formData, privacyAccepted: e.target.checked });
+                                if (formErrors.privacyAccepted) setFormErrors(prev => {
+                                  const next = { ...prev };
+                                  delete next.privacyAccepted;
+                                  return next;
+                                });
+                              }}
+                              className="mt-1 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                            />
+                            <span className="text-sm leading-6 text-gray-600 dark:text-gray-300">
+                              {t.privacy}{' '}
+                              <a href="#privacy" className="font-semibold text-teal-700 underline underline-offset-2 dark:text-teal-300">
+                                {t.privacyLink}
+                              </a>.
+                            </span>
+                          </label>
+                          {formErrors.privacyAccepted && (
+                            <p className="mt-2 flex items-center gap-1 text-sm text-red-500">
+                              <AlertCircle className="h-3.5 w-3.5" />
+                              {formErrors.privacyAccepted}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1975,9 +1835,9 @@ export function CalculatorSection() {
                       {/* Next/Analyze Button */}
                       <button
                         onClick={handleNext}
-                        disabled={(currentStep === 1 && !formData.businessType)}
+                        disabled={(currentStep === 1 && !formData.businessType) || isCalculating || isSubmitting}
                         className={`w-full px-4 py-4 rounded-lg font-semibold text-white transition-all sm:flex-1 sm:px-8 ${
-                          (currentStep === 1 && !formData.businessType)
+                          (currentStep === 1 && !formData.businessType) || isCalculating || isSubmitting
                             ?'bg-gray-300 cursor-not-allowed'
                             : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
                         }`}
@@ -1985,8 +1845,12 @@ export function CalculatorSection() {
                         <span className="flex items-center justify-center gap-2">
                           {currentStepIndex === steps.length - 1 ?(
                             <>
-                              {t.calculate}
-                              <Sparkles className="w-5 h-5" />
+                              {isSubmitting ? t.preparing : t.calculate}
+                              {isSubmitting ? (
+                                <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                              ) : (
+                                <Sparkles className="w-5 h-5" />
+                              )}
                             </>
                           ) : (
                             <>
