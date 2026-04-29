@@ -10,8 +10,6 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const logoBlue = '#006fba';
-
 const materialIconPaths = {
   home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5Z',
   opportunities:
@@ -99,10 +97,10 @@ export function Navigation() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 bg-white border-b border-gray-100 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 border-b bg-white/95 backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/95 ${
         isMenuOpen
-          ? 'z-[70] shadow-xl shadow-slate-900/10'
-          : 'z-50 shadow-sm shadow-slate-900/5'
+          ? 'z-[70] border-gray-100 shadow-xl shadow-slate-900/10 dark:shadow-black/30'
+          : 'z-50 border-gray-100 shadow-sm shadow-slate-900/5 dark:shadow-black/20'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,13 +110,18 @@ export function Navigation() {
             <img
               src="/logo.png"
               alt="BespaarCheck"
-              className="h-7 w-auto max-w-[150px] sm:h-10 sm:max-w-[190px]"
+              className="h-7 w-auto max-w-[118px] dark:hidden sm:h-10 sm:max-w-[190px]"
+            />
+            <img
+              src="/logo-light.png"
+              alt="BespaarCheck"
+              className="hidden h-7 w-auto max-w-[118px] dark:block sm:h-10 sm:max-w-[190px]"
             />
           </a>
 
           {/* Desktop menu */}
           <div className="hidden xl:flex items-center gap-5">
-            <a href="#top" className="text-gray-700 hover:text-[#006fba] transition-colors font-medium">
+            <a href="#top" className="text-gray-700 transition-colors hover:text-[#006fba] dark:text-slate-200 dark:hover:text-sky-300 font-medium">
               Home
             </a>
 
@@ -128,7 +131,7 @@ export function Navigation() {
                   e.stopPropagation();
                   setIsDropdownOpen(!isDropdownOpen);
                 }}
-                className="flex items-center gap-1 text-gray-700 hover:text-[#006fba] transition-colors font-medium"
+                className="flex items-center gap-1 text-gray-700 transition-colors hover:text-[#006fba] dark:text-slate-200 dark:hover:text-sky-300 font-medium"
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
               >
@@ -137,36 +140,36 @@ export function Navigation() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-3 w-60 material-card bg-white p-2">
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                <div className="absolute top-full left-0 mt-3 w-60 material-card bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.heatPump}
                   </a>
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.solar}
                   </a>
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.contracts}
                   </a>
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.storage}
                   </a>
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.charging}
                   </a>
-                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-[#006fba] transition-colors">
+                  <a href="#savings" className="block px-4 py-2.5 text-gray-700 transition-colors hover:bg-gray-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300">
                     {labels.smart}
                   </a>
                 </div>
               )}
             </div>
 
-            <a href="#regelgeving" className="text-gray-700 hover:text-[#006fba] transition-colors font-medium">
+            <a href="#regelgeving" className="text-gray-700 transition-colors hover:text-[#006fba] dark:text-slate-200 dark:hover:text-sky-300 font-medium">
               {labels.regulation}
             </a>
-            <a href="#faq" className="text-gray-700 hover:text-[#006fba] transition-colors font-medium">
+            <a href="#faq" className="text-gray-700 transition-colors hover:text-[#006fba] dark:text-slate-200 dark:hover:text-sky-300 font-medium">
               FAQ
             </a>
-            <a href="#contact" className="text-gray-700 hover:text-[#006fba] transition-colors font-medium">
+            <a href="#contact" className="text-gray-700 transition-colors hover:text-[#006fba] dark:text-slate-200 dark:hover:text-sky-300 font-medium">
               {labels.contact}
             </a>
 
@@ -180,7 +183,7 @@ export function Navigation() {
             <button
               type="button"
               onClick={toggleLanguage}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-[#006fba]"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-[#006fba] dark:border-slate-700 dark:text-slate-200 dark:hover:border-sky-800 dark:hover:bg-sky-950 dark:hover:text-sky-300"
               aria-label={labels.language}
             >
               <Languages className="h-4 w-4" />
@@ -203,34 +206,15 @@ export function Navigation() {
                   }`}
                 />
               </button>
-              <Moon className="w-4 h-4 transition-colors" style={{ color: logoBlue }} />
+              <Moon className="w-4 h-4 text-[#006fba] transition-colors dark:text-sky-300" />
             </div>
           </div>
 
           {/* Mobile menu button */}
-          <div className="xl:hidden flex shrink-0 items-center gap-0.5 sm:gap-3">
-            <button
-              onClick={toggleLanguage}
-              className="inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-blue-100 px-2 text-xs font-bold text-[#006fba] transition-colors hover:bg-blue-50 sm:min-w-11"
-              aria-label={labels.language}
-            >
-              {language.toUpperCase()}
-            </button>
-
-            {/* Mobile dark mode toggle */}
-            <button
-              onClick={toggleTheme}
-              className="h-9 w-9 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center sm:h-10 sm:w-10"
-              style={{ color: logoBlue }}
-              aria-label={labels.darkMode}
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
+          <div className="xl:hidden ml-auto flex shrink-0 items-center justify-end gap-1 sm:gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="relative h-9 w-9 hover:bg-blue-50 rounded-lg transition-colors sm:h-10 sm:w-10"
-              style={{ color: logoBlue }}
+              className="relative h-9 w-9 rounded-lg text-[#006fba] transition-colors hover:bg-blue-50 dark:text-sky-300 dark:hover:bg-sky-950 sm:h-10 sm:w-10"
               aria-label={isMenuOpen ? labels.closeMenu : labels.openMenu}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-navigation"
@@ -246,6 +230,23 @@ export function Navigation() {
                 }`}
               />
             </button>
+
+            {/* Mobile dark mode toggle */}
+            <button
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-lg text-[#006fba] transition-colors hover:bg-blue-50 dark:text-sky-300 dark:hover:bg-sky-950 flex items-center justify-center sm:h-10 sm:w-10"
+              aria-label={labels.darkMode}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            <button
+              onClick={toggleLanguage}
+              className="hidden h-9 min-w-11 items-center justify-center gap-1 rounded-lg border border-blue-100 px-2 text-xs font-bold text-[#006fba] transition-colors hover:bg-blue-50 dark:border-sky-900 dark:text-sky-300 dark:hover:bg-sky-950 sm:inline-flex"
+              aria-label={labels.language}
+            >
+              {language.toUpperCase()}
+            </button>
           </div>
         </div>
 
@@ -254,14 +255,14 @@ export function Navigation() {
           id="mobile-navigation"
           className={`xl:hidden overflow-hidden border-t transition-[max-height,opacity,transform,border-color,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isMenuOpen
-              ? 'max-h-[520px] opacity-100 translate-y-0 border-gray-100 pt-3 pb-5'
+              ? 'max-h-[520px] opacity-100 translate-y-0 border-gray-100 pt-3 pb-5 dark:border-slate-800'
               : 'max-h-0 opacity-0 -translate-y-2 border-transparent py-0 pointer-events-none'
           }`}
         >
           <div
-            className={`rounded-lg border bg-white transition-all duration-500 ${
+            className={`rounded-lg border bg-white transition-all duration-500 dark:bg-slate-900 ${
               isMenuOpen
-                ? 'border-gray-100 shadow-lg shadow-slate-900/10'
+                ? 'border-gray-100 shadow-lg shadow-slate-900/10 dark:border-slate-800 dark:shadow-black/30'
                 : 'border-transparent shadow-none'
             }`}
           >
@@ -271,14 +272,14 @@ export function Navigation() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-3 text-gray-700 hover:bg-blue-50 hover:text-[#006fba] font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-3 text-gray-700 hover:bg-blue-50 hover:text-[#006fba] dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-sky-300 font-medium transition-all duration-300 ${
                       isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
                     }`}
                     style={{
                       transitionDelay: isMenuOpen ? `${80 + index * 45}ms` : `${index * 20}ms`,
                     }}
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 shadow-inner" style={{ color: logoBlue }}>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-[#006fba] shadow-inner dark:bg-sky-950 dark:text-sky-300">
                       <MaterialIcon name={link.icon} className="h-5 w-5" />
                     </span>
                     <span>{link.label}</span>
@@ -298,6 +299,24 @@ export function Navigation() {
                 <MaterialIcon name="calculator" className="h-5 w-5" />
                 {labels.cta}
               </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  toggleLanguage();
+                  setIsMenuOpen(false);
+                }}
+                className={`mt-2 flex items-center justify-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-5 py-3 text-sm font-bold text-[#006fba] transition-all duration-300 hover:bg-blue-100 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300 dark:hover:bg-sky-900 sm:hidden ${
+                  isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+                }`}
+                style={{
+                  transitionDelay: isMenuOpen ? `${120 + mobileLinks.length * 45}ms` : '0ms',
+                }}
+                aria-label={labels.language}
+              >
+                <Languages className="h-4 w-4" />
+                {language.toUpperCase()}
+              </button>
             </div>
           </div>
         </div>

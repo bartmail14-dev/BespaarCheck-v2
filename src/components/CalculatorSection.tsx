@@ -996,8 +996,8 @@ export function CalculatorSection() {
                 <span>{steps[currentStepIndex]?.label}</span>
                 <span>{currentStepIndex + 1} / {steps.length}</span>
               </div>
-              <div className="overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
-              <div className="flex items-center justify-between relative min-w-[560px] sm:min-w-0">
+              <div className="hidden pb-2 sm:block sm:overflow-visible sm:pb-0">
+              <div className="flex min-w-0 items-center justify-between relative">
                 {/* Connection line */}
                 <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                   <div

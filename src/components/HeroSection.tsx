@@ -8,7 +8,7 @@ export function HeroSection() {
   const text = isEnglish
     ? {
         chip: 'Smart savings start with insight',
-        subtitle: 'For SMEs · discover your energy-saving opportunities instantly',
+        subtitle: 'For SMEs, discover your energy-saving opportunities instantly',
         intro: 'Quick insight into consumption, generation and smart saving options.',
         reassurance: 'Completely non-binding: you are not committed to anything.',
         cta: 'Start the BespaarCheck',
@@ -25,7 +25,7 @@ export function HeroSection() {
       }
     : {
         chip: 'Slim besparen begint met inzicht',
-        subtitle: 'Voor MKB · ontdek direct uw energiebesparingskansen',
+        subtitle: 'Voor MKB, ontdek direct uw energiebesparingskansen',
         intro: 'Snel inzicht in verbruik, opwek en slimme besparingsopties.',
         reassurance: 'Geheel vrijblijvend: u zit nergens aan vast.',
         cta: 'Doe de BespaarCheck',
@@ -43,7 +43,7 @@ export function HeroSection() {
 
   return (
     <section
-      className="flex min-h-[auto] items-center justify-center pt-20 pb-8 relative overflow-hidden transition-colors duration-700 sm:min-h-[88svh] sm:pt-24 sm:pb-10"
+      className="relative flex min-h-[calc(100svh-4rem)] items-center justify-center overflow-hidden pt-24 pb-12 transition-colors duration-700 sm:min-h-[88svh] sm:pt-24 sm:pb-10"
       style={{
         backgroundImage: isDark
           ? 'linear-gradient(135deg, #070b1f 0%, #111b45 28%, #312e81 62%, #0f3f68 100%)'
@@ -77,17 +77,17 @@ export function HeroSection() {
       />
 
       <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 z-10">
-        <div className="grid min-w-0 gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:gap-16 items-center">
+        <div className="grid min-w-0 gap-8 sm:gap-10 xl:grid-cols-[1.05fr_0.95fr] xl:gap-16 items-center">
           <div className="min-w-0 text-center xl:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 dark:border-violet-200/20 text-white/90 text-sm font-semibold mb-7 shadow-lg shadow-black/10 dark:shadow-violet-950/20">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 shadow-lg shadow-black/10 dark:border-violet-200/20 dark:shadow-violet-950/20 mb-5 sm:mb-7">
               <Sparkles className="w-4 h-4 text-lime-200 dark:text-violet-200" />
               {text.chip}
             </div>
         {/* Main Title */}
         <h1
-          className="font-bold text-white mb-7 tracking-tight material-title"
+          className="max-w-full overflow-hidden font-bold text-white mb-5 tracking-tight material-title sm:mb-7"
           style={{
-            fontSize: 'clamp(2.35rem, 8vw, 5.6rem)',
+            fontSize: 'clamp(2rem, 9.1vw, 5.6rem)',
             lineHeight: 1,
             textShadow: '0 8px 36px rgba(0, 0, 0, 0.28)',
           }}
@@ -95,9 +95,9 @@ export function HeroSection() {
           BespaarCheck
         </h1>
         <h2
-          className="mx-auto mb-6 max-w-[22rem] overflow-wrap-anywhere font-medium text-white/90 sm:max-w-3xl xl:mx-0"
+          className="mx-auto mb-5 max-w-[18.5rem] overflow-wrap-anywhere font-medium text-white/90 sm:mb-6 sm:max-w-3xl xl:mx-0"
           style={{
-            fontSize: 'clamp(1rem, 2.2vw, 1.75rem)',
+            fontSize: 'clamp(1.05rem, 4.8vw, 1.75rem)',
             lineHeight: 1.3,
             textShadow: '0 4px 22px rgba(0, 0, 0, 0.22)',
           }}
@@ -107,25 +107,25 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p
-          className="mx-auto mb-3 max-w-[21rem] overflow-wrap-anywhere text-white/90 leading-relaxed sm:max-w-2xl xl:mx-0"
-          style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)' }}
+          className="mx-auto mb-3 max-w-[18.5rem] overflow-wrap-anywhere text-white/90 leading-relaxed sm:max-w-2xl xl:mx-0"
+          style={{ fontSize: 'clamp(1rem, 4.2vw, 1.25rem)' }}
         >
           {text.intro}
         </p>
         <p
-          className="mx-auto mb-8 max-w-[21rem] overflow-wrap-anywhere font-semibold sm:max-w-2xl sm:mb-12 xl:mx-0"
+          className="mx-auto mb-7 max-w-[18.5rem] overflow-wrap-anywhere font-semibold sm:max-w-2xl sm:mb-12 xl:mx-0"
           style={{
             color: isDark ? '#c4b5fd' : '#bef264',
-            fontSize: 'clamp(1rem, 2vw, 1.25rem)',
+            fontSize: 'clamp(1rem, 4.2vw, 1.25rem)',
           }}
         >
           {text.reassurance}
         </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center xl:justify-start gap-3">
+            <div className="mx-auto flex w-full max-w-[18.5rem] flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center xl:mx-0 xl:justify-start">
               <a
                 href="#calculator"
-                className="material-button inline-flex items-center justify-center gap-2 font-semibold bg-white text-emerald-800 px-8 py-4 text-lg"
+                className="material-button inline-flex items-center justify-center gap-2 bg-white px-7 py-4 text-base font-semibold text-emerald-800 sm:px-8 sm:text-lg"
                 style={{
                   boxShadow: '0 12px 34px -12px rgba(0, 0, 0, 0.4)',
                 }}
@@ -135,7 +135,7 @@ export function HeroSection() {
               </a>
               <a
                 href="#regelgeving"
-                className="material-button inline-flex items-center justify-center gap-2 px-7 py-4 text-white font-semibold border border-white/25 bg-white/10 hover:bg-white/15"
+                className="material-button inline-flex items-center justify-center gap-2 border border-white/25 bg-white/10 px-7 py-4 font-semibold text-white hover:bg-white/15"
               >
                 {text.rules}
                 <ShieldCheck className="w-5 h-5" />
@@ -153,7 +153,7 @@ export function HeroSection() {
         </div>
           </div>
 
-          <div className="hero-route-card relative mx-auto w-full min-w-0 max-w-full sm:max-w-xl xl:mx-0">
+          <div className="hero-route-card relative mx-auto hidden w-full min-w-0 max-w-full sm:block sm:max-w-xl xl:mx-0">
             <div className="material-surface w-full max-w-full overflow-hidden rounded-lg bg-white/92 dark:bg-slate-950/86 backdrop-blur-xl p-4 sm:p-6 border-white/35 dark:border-violet-300/20 dark:shadow-2xl dark:shadow-violet-950/30">
               <div className="flex items-start justify-between gap-4 pb-5 border-b border-gray-100 dark:border-indigo-900/50">
                 <div>
