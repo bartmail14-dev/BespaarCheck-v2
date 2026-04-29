@@ -12,10 +12,10 @@ interface EnergyPrices {
   isLive: boolean;
 }
 
-// Default zakelijke prijzen als fallback (ex BTW, inc energiebelasting + leveringskosten)
+// Indicatieve zakelijke prijzen als fallback (ex btw, inclusief grove opslag voor levering en energiebelasting).
 const DEFAULT_PRICES: EnergyPrices = {
-  electricity: 0.16, // €/kWh zakelijk MKB kleinverbruik (inc leveringskosten, ex BTW)
-  gas: 0.55, // €/m³ zakelijk MKB kleinverbruik (inc leveringskosten, ex BTW)
+  electricity: 0.16, // EUR/kWh zakelijk MKB kleinverbruik, indicatief en ex btw.
+  gas: 0.55, // EUR/m3 zakelijk MKB kleinverbruik, indicatief en ex btw.
   feedInTariff: 0.07,
   lastUpdated: null,
   isLive: false,
@@ -32,8 +32,7 @@ async function fetchEnergyPrices(): Promise<EnergyPrices> {
 
     const formatDate = (d: Date) => encodeURIComponent(d.toISOString());
 
-    // EnergyZero API levert EPEX spotprijzen (ex BTW) of inc BTW
-    // We halen ZONDER BTW op (inclBtw=false) → dit zijn kale spotprijzen
+    // EnergyZero API levert marktprijzen. We halen zonder btw op en voegen daarna een grove zakelijke opslag toe.
     const elecResponse = await fetch(
       `https://api.energyzero.nl/v1/energyprices?fromDate=${formatDate(today)}&tillDate=${formatDate(tomorrow)}&interval=4&usageType=1&inclBtw=false`
     );
@@ -56,8 +55,7 @@ async function fetchEnergyPrices(): Promise<EnergyPrices> {
       throw new Error('Geen prijsdata beschikbaar');
     }
 
-    // Spotprijzen (ex BTW) → zakelijke all-in prijs
-    // Zakelijk = spotprijs + energiebelasting + opslagen (leveringskosten, netbeheer indicatief)
+    // Marktprijs ex btw, aangevuld met indicatieve zakelijke opslagen.
     const avgElecSpot = elecPrices.length > 0
       ?elecPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / elecPrices.length
       : null;
@@ -66,8 +64,7 @@ async function fetchEnergyPrices(): Promise<EnergyPrices> {
       ?gasPrices.reduce((sum: number, p: { price: number }) => sum + p.price, 0) / gasPrices.length
       : null;
 
-    // Zakelijke all-in = spotprijs + EB zakelijk (~€0.01/kWh elektra, ~€0.50/m³ gas)
-    //                   + indicatieve leveringsopslag (~€0.03/kWh, ~€0.08/m³)
+    // Dit is geen offerte of volledig tarief. Netbeheer, belastingschijven en contractvoorwaarden verschillen per situatie.
     const zakelijkElec = avgElecSpot !== null
       ?Math.max(avgElecSpot + 0.01 + 0.03, 0.08)
       : DEFAULT_PRICES.electricity;
@@ -293,11 +290,11 @@ export function CalculatorSection() {
         loadingPrices: 'Loading energy prices...',
         phases: ['Analysing...', 'Calculating...', 'Optimising...', 'Finishing...'],
         resultsTitle: 'Your savings analysis',
-        resultsSubtitle: 'Based on current energy prices and your business profile',
+        resultsSubtitle: 'Based on indicative market input and your business profile',
         currentCosts: 'Your estimated current energy costs',
         electricity: 'electricity',
-        livePrices: 'Live prices',
-        indicativePrices: 'Indicative prices',
+        livePrices: 'Current market input',
+        indicativePrices: 'Indicative price input',
         potentialSaving: 'Potential saving',
         co2Reduction: 'CO2 reduction',
         payback: 'Avg. payback time',
@@ -326,8 +323,8 @@ export function CalculatorSection() {
         contractTitle: 'Your energy contract',
         contractIntro: 'Select your current contract type',
         recommended: 'Recommended',
-        dynamicNote: 'Dynamic rates can deliver up to',
-        dynamicNoteStrong: '30% extra saving',
+        dynamicNote: 'Dynamic rates can create extra savings when usage can be shifted.',
+        dynamicNoteStrong: 'The calculation remains conservative.',
         prioritiesTitle: 'What matters to you?',
         prioritiesIntro: 'We rank the recommendations based on your choice',
         prioritiesNote: 'The order of recommendations is aligned with your priorities',
@@ -359,11 +356,11 @@ export function CalculatorSection() {
         loadingPrices: 'Energieprijzen laden...',
         phases: ['Analyseren...', 'Berekenen...', 'Optimaliseren...', 'Afronden...'],
         resultsTitle: 'Uw besparingsanalyse',
-        resultsSubtitle: 'Gebaseerd op actuele energieprijzen en uw bedrijfsprofiel',
+        resultsSubtitle: 'Gebaseerd op indicatieve marktinput en uw bedrijfsprofiel',
         currentCosts: 'Uw geschatte huidige energiekosten',
         electricity: 'elektra',
-        livePrices: 'Live prijzen',
-        indicativePrices: 'Indicatieve prijzen',
+        livePrices: 'Actuele marktinput',
+        indicativePrices: 'Indicatieve prijsinput',
         potentialSaving: 'Potentiele besparing',
         co2Reduction: 'CO2 reductie',
         payback: 'Gem. terugverdientijd',
@@ -392,8 +389,8 @@ export function CalculatorSection() {
         contractTitle: 'Uw energiecontract',
         contractIntro: 'Selecteer uw huidige contractvorm',
         recommended: 'Aanbevolen',
-        dynamicNote: 'Dynamische tarieven kunnen tot',
-        dynamicNoteStrong: '30% extra besparing',
+        dynamicNote: 'Dynamische tarieven kunnen extra besparing opleveren als verbruik flexibel is.',
+        dynamicNoteStrong: 'De berekening blijft bewust conservatief.',
         prioritiesTitle: 'Wat is belangrijk voor u?',
         prioritiesIntro: 'We rangschikken de aanbevelingen op basis van uw keuze',
         prioritiesNote: 'De volgorde van aanbevelingen wordt afgestemd op uw prioriteiten',
@@ -466,7 +463,7 @@ export function CalculatorSection() {
   const calculateResults = useCallback((): CalculationResult => {
     const profile = SECTOR_PROFILES[formData.businessType] || SECTOR_PROFILES.other;
 
-    // Huidige energiekosten berekenen met live prijzen
+    // Huidige energiekosten berekenen met indicatieve prijsinput.
     const currentCosts = {
       electricity: formData.electricityUsage * energyPrices.electricity,
       gas: formData.gasUsage * energyPrices.gas,
@@ -475,7 +472,7 @@ export function CalculatorSection() {
 
     // Bestaande solar feed-in verrekenen (gebruiker krijgt al geld terug)
     if (formData.solarFeedIn > 0) {
-      currentCosts.electricity -= formData.solarFeedIn * energyPrices.feedInTariff;
+      currentCosts.electricity = Math.max(0, currentCosts.electricity - formData.solarFeedIn * energyPrices.feedInTariff);
     }
 
     currentCosts.total = currentCosts.electricity + currentCosts.gas;
@@ -1100,15 +1097,15 @@ export function CalculatorSection() {
                     {/* Current costs context */}
                     <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
                       <p className="text-gray-600 dark:text-gray-400 text-sm text-center leading-6">
-                        Uw geschatte huidige energiekosten: <span className="font-bold text-gray-900 dark:text-white">€{results.currentCosts.total.toLocaleString()}</span>/jaar
-                        <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} elektra + €{results.currentCosts.gas.toLocaleString()} gas)</span>
+                        {t.currentCosts}: <span className="font-bold text-gray-900 dark:text-white">€{results.currentCosts.total.toLocaleString()}</span>/{t.year}
+                        <span className="text-gray-400 ml-2">(€{results.currentCosts.electricity.toLocaleString()} {t.electricity} + €{results.currentCosts.gas.toLocaleString()} gas)</span>
                       </p>
                       <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
                         {energyPrices.isLive ?(
                           <>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Live prijzen
+                              {t.livePrices}
                             </span>
                             <span className="text-gray-400 dark:text-gray-500">
                               €{energyPrices.electricity.toFixed(3)}/kWh • €{energyPrices.gas.toFixed(2)}/m³
@@ -1117,7 +1114,7 @@ export function CalculatorSection() {
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
                             <RefreshCw className="w-3 h-3" />
-                            Indicatieve prijzen
+                            {t.indicativePrices}
                           </span>
                         )}
                       </div>
@@ -1742,7 +1739,7 @@ export function CalculatorSection() {
                         <div className="mt-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800">
                           <p className="text-gray-600 dark:text-gray-300 text-sm flex items-center gap-2">
                             <Zap className="w-4 h-4 text-blue-500" />
-                            <span>{t.dynamicNote} <span className="text-blue-600 dark:text-blue-400 font-semibold">{t.dynamicNoteStrong}</span> {isEnglish ? 'deliver' : 'opleveren'}</span>
+                            <span>{t.dynamicNote} <span className="text-blue-600 dark:text-blue-400 font-semibold">{t.dynamicNoteStrong}</span></span>
                           </p>
                         </div>
                       </div>

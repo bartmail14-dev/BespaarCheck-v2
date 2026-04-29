@@ -54,7 +54,7 @@ const regulations: RegulationItem[] = [
         { label: 'RVO: energiebesparingsplicht', url: 'https://www.rvo.nl/onderwerpen/energiebesparingsplicht' },
         { label: 'RVO: informatieplicht', url: 'https://www.rvo.nl/onderwerpen/energiebesparingsplicht/informatieplicht-energiebesparing' },
       ],
-      exemptions: ['Sommige sectoren of situaties kennen uitzonderingen of aanvullende regimes. Controleer dit altijd bij de officiele bron.'],
+      exemptions: ['Sommige sectoren of situaties kennen uitzonderingen of aanvullende regimes. Controleer dit altijd bij de officiële bron.'],
     },
     color: '#006fba',
   },
@@ -96,7 +96,7 @@ const regulations: RegulationItem[] = [
       deadline: 'Rapportage gebeurt periodiek. Controleer RVO voor de actuele ronde.',
       penalties: 'Het bevoegd gezag kan handhaven als de onderzoeksplicht niet of onvoldoende wordt nageleefd.',
       links: [
-        { label: 'RVO: onderzoeksplicht', url: 'https://www.rvo.nl/onderwerpen/energiebesparingsplicht-2023/onderzoeksplicht-energiebesparing-vanaf-2023' },
+        { label: 'RVO: onderzoeksplicht', url: 'https://www.rvo.nl/onderwerpen/energiebesparingsplicht/onderzoeksplicht' },
         { label: 'RVO stappenplan', url: 'https://infographics.rvo.nl/stappenplan/' },
       ],
     },
@@ -157,7 +157,7 @@ const regulations: RegulationItem[] = [
       requirements: [
         'Kantoorfunctie en nevenfuncties samen vanaf 100 m2',
         'Kantoorfunctie is meer dan 50% van het gebouw',
-        'Geen uitzondering zoals monument, religieuze functie of geplande sloop/transformatie',
+        'Geen uitzondering zoals monument, kort tijdelijk gebruik, onteigening, geen klimaatregeling of terugverdientijd boven 10 jaar',
       ],
       deadline: 'De verplichting geldt sinds 1 januari 2023. Gemeenten en omgevingsdiensten kunnen handhaven.',
       penalties: 'Een kantoor dat niet voldoet mag mogelijk niet meer als kantoor worden gebruikt.',
@@ -177,9 +177,9 @@ const regulations: RegulationItem[] = [
     details: {
       applicable: 'Dit is relevant voor utiliteitsgebouwen met grotere technische installaties.',
       requirements: [
-        'Verwarmingssystemen vanaf 70 kW',
-        'Airconditioningsystemen vanaf 70 kW',
-        'Bij grotere systemen kunnen aanvullende gebouwautomatiseringseisen gelden',
+        'Verwarmingssystemen rond of boven 70 kW, met exacte grens afhankelijk van het systeemtype',
+        'Airconditioningsystemen met meer dan 70 kW nominaal vermogen',
+        'GACS kan gelden voor utiliteitsgebouwen met klimaatinstallaties boven 290 kW en vanaf 2030 breder boven 70 kW',
       ],
       deadline: 'Keuringen moeten periodiek plaatsvinden volgens de geldende termijnen.',
       penalties: 'Het bevoegd gezag kan optreden bij het ontbreken van een geldige keuring.',
@@ -249,7 +249,7 @@ const quickRows = [
   ['Onderzoeksplicht', '>=10 mln kWh of >=170.000 m3', 'Elke 4 jaar'],
   ['EED-audit', 'Grote ondernemingen', 'Elke 4 jaar'],
   ['Energielabel C kantoren', 'Kantoor >=100 m2', 'Sinds 1-1-2023'],
-  ['EPBD-keuring', 'CV/airco >=70 kW', 'Periodiek'],
+  ['EPBD-keuring', 'CV/airco rond 70 kW', 'Periodiek'],
   ['F-gassen', 'Afhankelijk van CO2-equivalent', 'Periodiek'],
 ];
 
@@ -339,7 +339,7 @@ const regulationCopyEn: Record<string, Pick<RegulationItem, 'question' | 'summar
       requirements: [
         'Office function and ancillary functions together from 100 m2',
         'Office function is more than 50% of the building',
-        'No exception such as monument status, religious function or planned demolition/transformation',
+        'No exception such as monument status, short temporary use, expropriation, no climate control or payback above 10 years',
       ],
       deadline: 'The obligation applies since 1 January 2023. Municipalities and environmental authorities can enforce it.',
       penalties: 'An office that does not comply may no longer be allowed to be used as an office.',
@@ -352,9 +352,9 @@ const regulationCopyEn: Record<string, Pick<RegulationItem, 'question' | 'summar
     details: {
       applicable: 'This is relevant for non-residential buildings with larger technical installations.',
       requirements: [
-        'Heating systems from 70 kW',
-        'Air-conditioning systems from 70 kW',
-        'Larger systems may have additional building automation requirements',
+        'Heating systems around or above 70 kW, with the exact threshold depending on system type',
+        'Air-conditioning systems above 70 kW nominal capacity',
+        'GACS can apply to non-residential buildings with climate systems above 290 kW and from 2030 more broadly above 70 kW',
       ],
       deadline: 'Inspections must take place periodically according to the applicable terms.',
       penalties: 'The competent authority can act if a valid inspection is missing.',
@@ -403,7 +403,7 @@ const quickRowsEn = [
   ['Investigation obligation', '>=10 mln kWh or >=170,000 m3', 'Every 4 years'],
   ['EED audit', 'Large enterprises', 'Every 4 years'],
   ['Energy label C offices', 'Office >=100 m2', 'Since 1 Jan 2023'],
-  ['EPBD inspection', 'Heating/airco >=70 kW', 'Periodic'],
+  ['EPBD inspection', 'Heating/airco around 70 kW', 'Periodic'],
   ['F-gases', 'Depends on CO2 equivalent', 'Periodic'],
 ];
 
@@ -454,12 +454,12 @@ export function RegulationsSection() {
           'Een praktisch overzicht van energiegerelateerde verplichtingen. Informatief, niet juridisch bindend, en altijd volledig vrijblijvend.',
         warningTitle: 'Controleer altijd uw specifieke situatie',
         warning:
-          'Verplichtingen hangen af van locatie, eigendom/huur, sector, installaties en energieverbruik. Raadpleeg officiele bronnen of bevoegd gezag bij twijfel.',
+          'Verplichtingen hangen af van locatie, eigendom/huur, sector, installaties en energieverbruik. Raadpleeg officiële bronnen of bevoegd gezag bij twijfel.',
         applies: 'Wanneer van toepassing',
         deadline: 'Deadline',
         penalties: 'Bij niet-naleving',
         exceptions: 'Uitzonderingen',
-        sources: 'Officiele bronnen',
+        sources: 'Officiële bronnen',
         quickTitle: 'Snelle check: welke verplichtingen gelden voor u?',
         table: ['Verplichting', 'Drempelwaarde', 'Frequentie'],
         ctaTitle: 'Niet zeker of u aan alle verplichtingen voldoet?',
@@ -468,7 +468,7 @@ export function RegulationsSection() {
         rvo: 'RVO Energiebesparing',
         check: 'Doe vrijblijvend de check',
         disclaimer:
-          'Informatie is met zorg samengesteld, maar wetgeving en uitvoering kunnen wijzigen. Controleer altijd de actuele officiele bronnen.',
+          'Informatie is met zorg samengesteld, maar wetgeving en uitvoering kunnen wijzigen. Controleer altijd de actuele officiële bronnen.',
       };
 
   return (

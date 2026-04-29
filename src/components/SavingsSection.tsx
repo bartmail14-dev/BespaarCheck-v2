@@ -19,7 +19,7 @@ const opportunities = [
         'Potentieel lagere energiekosten op lange termijn',
         'Kan de waarde van uw pand verhogen'
       ],
-      subsidies: 'Via de ISDE (Investeringssubsidie Duurzame Energie) kunt u mogelijk subsidie aanvragen voor warmtepompen. Raadpleeg RVO voor actuele voorwaarden en bedragen.',
+      subsidies: 'Via de ISDE kunt u mogelijk subsidie aanvragen voor warmtepompen. Vraag zakelijk altijd aan voordat u akkoord geeft op een offerte en controleer RVO voor actuele voorwaarden en bedragen.',
       roi: 'De terugverdientijd is afhankelijk van uw huidige verwarmingssysteem, isolatie en energieprijzen.',
       sources: [
         { name: 'RVO: ISDE warmtepomp zakelijk', url: 'https://www.rvo.nl/subsidies-financiering/isde/zakelijke-gebruikers/warmtepomp' },
@@ -43,7 +43,7 @@ const opportunities = [
         'Relatief weinig onderhoud nodig',
         'Lange levensduur (fabrikanten geven vaak 25 jaar garantie)'
       ],
-      subsidies: 'Zakelijke zonnepanelen kunnen in aanmerking komen voor de Energie-investeringsaftrek (EIA). Raadpleeg RVO voor actuele voorwaarden.',
+      subsidies: 'Zakelijke zonnepanelen kunnen onder voorwaarden in aanmerking komen voor de Energie-investeringsaftrek (EIA). Gebruik van SDE++ kan EIA uitsluiten. Raadpleeg RVO voor actuele voorwaarden.',
       roi: 'De terugverdientijd hangt af van dakoriëntatie, eigen verbruik en energieprijzen.',
       sources: [
         { name: 'RVO: subsidies zonne-energie', url: 'https://www.rvo.nl/onderwerpen/zonne-energie/subsidies-regelingen' },
@@ -67,7 +67,7 @@ const opportunities = [
         'Groene stroom beschikbaar',
         'Ondersteuning bij contractkeuze'
       ],
-      subsidies: 'Geen directe subsidies, maar wel mogelijke belastingvoordelen bij keuze voor groene energie via Garanties van Oorsprong (GvO\'s).',
+      subsidies: 'Geen directe subsidie. Groene stroom en Garanties van Oorsprong zijn contractkeuzes en geen automatisch belastingvoordeel.',
       roi: 'Besparing hangt af van uw huidige contract en verbruiksprofiel.',
       sources: [
         { name: 'ACM: rechten zakelijke afnemers', url: 'https://www.acm.nl/nl/energie/elektriciteit-en-gas/rechten-van-afnemers/uw-rechten-als-zakelijk-afnemer-van-elektriciteit-en-gas' },
@@ -164,7 +164,7 @@ const opportunitiesEn: typeof opportunities = [
         'Potentially lower energy costs over the long term',
         'Can increase the value of your property',
       ],
-      subsidies: 'The Dutch ISDE scheme may provide subsidy options for heat pumps. Check RVO for current conditions and amounts.',
+      subsidies: 'The Dutch ISDE scheme may provide subsidy options for heat pumps. Business users should apply before accepting a quote and should check RVO for current conditions and amounts.',
       roi: 'Payback time depends on your current heating system, insulation and energy prices.',
       sources: [
         { name: 'RVO: business ISDE heat pump', url: 'https://www.rvo.nl/subsidies-financiering/isde/zakelijke-gebruikers/warmtepomp' },
@@ -186,7 +186,7 @@ const opportunitiesEn: typeof opportunities = [
         'Relatively low maintenance',
         'Long service life, often with manufacturer warranties around 25 years',
       ],
-      subsidies: 'Business solar panels may be eligible for the Dutch Energy Investment Allowance. Check RVO for current conditions.',
+      subsidies: 'Business solar panels may be eligible for the Dutch Energy Investment Allowance under specific conditions. Use of the SDE++ scheme can exclude EIA eligibility. Check RVO for current conditions.',
       roi: 'Payback time depends on roof orientation, own consumption and energy prices.',
       sources: [
         { name: 'RVO: solar energy subsidies', url: 'https://www.rvo.nl/onderwerpen/zonne-energie/subsidies-regelingen' },
@@ -208,7 +208,7 @@ const opportunitiesEn: typeof opportunities = [
         'Green electricity available',
         'Support with contract selection',
       ],
-      subsidies: 'There are no direct subsidies, but green energy choices can involve Guarantees of Origin and other purchasing considerations.',
+      subsidies: 'There is no direct subsidy. Green electricity and Guarantees of Origin are contract choices, not automatic tax benefits.',
       roi: 'Savings depend on your current contract and consumption profile.',
       sources: [
         { name: 'ACM: rights for business customers', url: 'https://www.acm.nl/nl/energie/elektriciteit-en-gas/rechten-van-afnemers/uw-rechten-als-zakelijk-afnemer-van-elektriciteit-en-gas' },

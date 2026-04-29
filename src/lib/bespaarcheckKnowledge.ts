@@ -27,7 +27,7 @@ Gedragsregels:
 - Gebruik af en toe een lichte positieve formulering, zoals "Dat is een mooie ingang" of "Daar zit vaak veel potentieel", maar vermijd hype, verkooppraat en cheesy taal.
 - Noem bedragen, verplichtingen en besparingen altijd als indicatie, tenzij de bezoeker exacte gegevens geeft.
 - Benadruk waar relevant dat BespaarCheck gratis en geheel vrijblijvend is: de bezoeker zit nergens aan vast.
-- Geef geen juridisch advies. Verwijs bij wetgeving naar officiele RVO-bronnen of een adviseur.
+- Geef geen juridisch advies. Verwijs bij wetgeving naar officiële RVO-bronnen of een adviseur.
 - Vraag maximaal 1 gerichte vervolgvraag als je meer informatie nodig hebt. Goede vragen gaan over bedrijfstype, jaarverbruik, gebouwgrootte, bestaande installaties, dakruimte, energiecontract of prioriteit.
 - Stuur bezoekers naar de calculator wanneer een berekening of concreet advies nodig is.
 - Werk na 2 tot 4 nuttige vragen rustig toe naar een lichte conversie als er duidelijke interesse of besparingspotentieel is.
@@ -133,7 +133,7 @@ export const kennisbank: KnowledgeItem[] = [
     bullets: [
       'De calculator houdt rekening met eigen verbruik en teruglevering.',
       'Bestaande zonnepanelen kunnen worden ingevoerd, inclusief jaarlijkse teruglevering.',
-      'Rendement hangt af van dakorientatie, dakoppervlak, netaansluiting en contractvoorwaarden.',
+      'Rendement hangt af van dakoriëntatie, dakoppervlak, netaansluiting en contractvoorwaarden.',
     ],
     anchor: '#savings',
   },
@@ -146,7 +146,7 @@ export const kennisbank: KnowledgeItem[] = [
     bullets: [
       'De calculator rekent alleen met warmtepompopties als het gasverbruik en gebouwprofiel logisch zijn.',
       'Een warmtepomp verhoogt meestal het elektriciteitsverbruik, maar verlaagt het gasverbruik.',
-      'Voor grotere of slecht geisoleerde panden is maatwerk nodig.',
+      'Voor grotere of slecht geïsoleerde panden is maatwerk nodig.',
     ],
     anchor: '#savings',
   },
@@ -185,7 +185,7 @@ export const kennisbank: KnowledgeItem[] = [
     bullets: [
       'De verplichting gaat over maatregelen die zich binnen 5 jaar terugverdienen.',
       'De beoordeling hangt af van locatie, activiteit en energiegebruik.',
-      'Controleer de officiele RVO-bronnen voor de exacte situatie.',
+      'Controleer de officiële RVO-bronnen voor de exacte situatie.',
     ],
     anchor: '#regelgeving',
   },
@@ -196,7 +196,7 @@ export const kennisbank: KnowledgeItem[] = [
       'Wie onder de energiebesparingsplicht valt, moet meestal eens per 4 jaar rapporteren welke maatregelen zijn genomen.',
     keywords: ['informatieplicht', 'rapporteren', 'rvo', 'eloket', 'omgevingsdienst', 'rapportage'],
     bullets: [
-      'De vorige rapportageronde moest uiterlijk 1 december 2023 binnen zijn.',
+      'De vorige rapportageronde had 1 december 2023 als uiterste datum. Controleer RVO voor de actuele ronde en uitzonderingen.',
       'Rapporteren loopt via RVO eLoket en is gericht aan de omgevingsdienst.',
       'Niet of onvolledig rapporteren kan tot handhaving leiden.',
     ],
@@ -236,8 +236,8 @@ export const kennisbank: KnowledgeItem[] = [
     keywords: ['eed', 'epbd', 'gacs', 'f-gassen', 'airco', 'koeling', 'keuring', 'audit', '250 fte'],
     bullets: [
       'EED-auditplicht geldt voor grote ondernemingen, bijvoorbeeld vanaf 250 fte of hoge omzet/balanstotaal.',
-      'EPBD-keuring geldt voor verwarmings- en aircosystemen vanaf 70 kW.',
-      'GACS is sinds 2026 relevant voor grote systemen vanaf 290 kW en richting 2030 ook voor systemen boven 70 kW.',
+      'EPBD-keuring geldt voor grotere verwarmings- en aircosystemen rond of boven 70 kW, met exacte grens per systeemtype.',
+      'GACS geldt sinds 2026 voor veel utiliteitsgebouwen met klimaatinstallaties boven 290 kW en wordt vanaf 2030 breder relevant boven 70 kW.',
       'F-gasseninstallaties kunnen lekcontrole, certificering en logboekplicht vragen.',
     ],
     anchor: '#regelgeving',
@@ -383,7 +383,7 @@ const kennisbankEn: KnowledgeItem[] = [
       'Organizations that fall under the energy-saving obligation usually have to report every 4 years which measures were taken.',
     keywords: ['information duty', 'reporting', 'rvo', 'eloket', 'environmental authority'],
     bullets: [
-      'The previous reporting round was due by 1 December 2023.',
+      'The previous reporting round was due by 1 December 2023. Check RVO for the current reporting round and exceptions.',
       'Reporting runs through RVO eLoket and is addressed to the environmental authority.',
       'Missing or incomplete reporting can lead to enforcement.',
     ],
@@ -410,7 +410,7 @@ const kennisbankEn: KnowledgeItem[] = [
     keywords: ['label c', 'energy label', 'office', 'offices', '100 m2', '2023'],
     bullets: [
       'The rule often applies from at least 100 m2 office function and more than 50 percent office function.',
-      'There are exceptions, such as monuments or planned demolition or transformation.',
+      'There are exceptions, such as monuments, short temporary use, expropriation, no climate control or required measures with payback above 10 years.',
       'Municipalities and environmental authorities can enforce this.',
     ],
     anchor: '#regelgeving',
@@ -627,7 +627,7 @@ export function createLocalAnswer(question: string, language: ChatLanguage = 'nl
   ) {
     return {
       reply:
-        'Dat hangt af van uw verbruik, locatie, sector en installaties. Als een locatie jaarlijks vanaf 50.000 kWh elektriciteit of 25.000 m3 aardgas(equivalent) gebruikt, kan de energiebesparingsplicht gelden. Dan moeten maatregelen worden genomen die zich binnen 5 jaar terugverdienen. Bij zeer groot verbruik kan ook de onderzoeksplicht gelden. Dit is informatief, geen juridisch advies; controleer altijd de officiele RVO-bronnen voor uw specifieke situatie.',
+        'Dat hangt af van uw verbruik, locatie, sector en installaties. Als een locatie jaarlijks vanaf 50.000 kWh elektriciteit of 25.000 m3 aardgas(equivalent) gebruikt, kan de energiebesparingsplicht gelden. Dan moeten maatregelen worden genomen die zich binnen 5 jaar terugverdienen. Bij zeer groot verbruik kan ook de onderzoeksplicht gelden. Dit is informatief, geen juridisch advies; controleer altijd de officiële RVO-bronnen voor uw specifieke situatie.',
       anchor: '#regelgeving',
     };
   }

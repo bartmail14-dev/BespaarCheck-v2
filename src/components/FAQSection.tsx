@@ -16,12 +16,12 @@ const faqItems: FAQItem[] = [
   {
     question: 'Hoe betrouwbaar is de online berekening?',
     answer:
-      'De calculator geeft een indicatie op basis van uw bedrijfstype, verbruik en actuele zakelijke energietarieven. De werkelijke besparing hangt af van onder andere de staat van uw pand, dakorientatie, isolatiegraad en uw specifieke energiecontract.',
+      'De calculator geeft een indicatie op basis van uw bedrijfstype, verbruik en indicatieve marktinput. De werkelijke besparing hangt af van onder andere de staat van uw pand, dakoriëntatie, isolatiegraad, belastingschijven, netbeheerkosten en uw specifieke energiecontract.',
   },
   {
     question: 'Welke energieprijzen worden gebruikt in de berekening?',
     answer:
-      'We gebruiken actuele zakelijke energietarieven waar dat technisch beschikbaar is. Bij technische problemen gebruikt de check recente gemiddelde marktprijzen als fallback. De gebruikte tarieven worden altijd getoond in de resultaten.',
+      'We gebruiken actuele marktprijzen waar dat technisch beschikbaar is en vullen die aan met indicatieve zakelijke opslagen. Bij technische problemen gebruikt de check fallbacktarieven. De gebruikte prijsinput wordt altijd getoond in de resultaten en is geen offerte.',
   },
   {
     question: 'Kost een adviesgesprek iets?',
@@ -41,7 +41,7 @@ const faqItems: FAQItem[] = [
   {
     question: 'Ben ik als MKB-bedrijf verplicht om energiebesparende maatregelen te nemen?',
     answer:
-      'Dat hangt af van uw verbruik, locatie, sector en installaties. Bedrijven met een jaarlijks elektriciteitsverbruik vanaf 50.000 kWh of gasverbruik vanaf 25.000 m3 aardgas(equivalent) kunnen onder de energiebesparingsplicht vallen. Controleer altijd de officiele RVO-bronnen.',
+      'Dat hangt af van uw verbruik, locatie, sector en installaties. Bedrijven met een jaarlijks elektriciteitsverbruik vanaf 50.000 kWh of gasverbruik vanaf 25.000 m3 aardgas(equivalent) kunnen onder de energiebesparingsplicht vallen. Controleer altijd de officiële RVO-bronnen.',
   },
   {
     question: 'Hoe lang duurt het voordat ik resultaat zie?',
@@ -69,12 +69,12 @@ const faqItemsEn: FAQItem[] = [
   {
     question: 'How reliable is the online calculation?',
     answer:
-      'The calculator gives an indication based on your business type, consumption and current business energy rates. Actual savings depend on factors such as the condition of the building, roof orientation, insulation and your specific energy contract.',
+      'The calculator gives an indication based on your business type, consumption and indicative market input. Actual savings depend on factors such as the condition of the building, roof orientation, insulation, tax bands, grid costs and your specific energy contract.',
   },
   {
     question: 'Which energy prices are used in the calculation?',
     answer:
-      'We use current business energy rates where technically available. If this is not available, the check uses recent average market prices as a fallback. The rates used are always shown in the results.',
+      'We use current market prices where technically available and add indicative business markups. If this is not available, the check uses fallback rates. The price input is always shown in the results and is not a formal offer.',
   },
   {
     question: 'Does an advisory call cost anything?',
