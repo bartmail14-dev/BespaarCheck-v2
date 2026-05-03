@@ -2,6 +2,26 @@ const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const MAX_REQUEST_BYTES = 28_000;
+const ALLOWED_ORIGINS = new Set([
+  'https://bespaarcheck.net',
+  'https://www.bespaarcheck.net',
+  'https://bespaarcheck.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+]);
+
+function setCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
 
 function getClientId(req) {
   const forwardedFor = req.headers['x-forwarded-for'];
@@ -119,6 +139,7 @@ Perform a strict sanity check before writing the explanation:
 3. Check whether recommendations fit the entered building type, energy use and existing installations.
 4. Flag anything that seems optimistic, incomplete or dependent on missing data.
 5. If the outcome looks plausible, say that calmly. If it needs review, explain what must be checked.
+6. Recommendations with countsInTotals false are separate opportunities. Do not treat them as guaranteed savings or as part of the headline total.
 
 Return strict JSON with:
 {
@@ -176,8 +197,14 @@ async function requestGemini({ apiKey, model, prompt }) {
 }
 
 export default async function handler(req, res) {
+  setCorsHeaders(req, res);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 

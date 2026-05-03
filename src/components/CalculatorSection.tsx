@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Building2, Zap, Euro, Users, CheckCircle, Sparkles, TrendingDown, Leaf, ArrowRight, Cpu, Sun, Battery, Thermometer, Settings, ChevronDown, ArrowDownUp, Mail, User, Building, AlertCircle, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveCalculatorInsightEndpoint, resolveContactEndpoint } from '../lib/apiEndpoints';
 
 // Energie prijzen interface
 interface EnergyPrices {
@@ -14,9 +15,9 @@ interface EnergyPrices {
 
 // Indicatieve zakelijke prijzen als fallback (ex btw, inclusief grove opslag voor levering en energiebelasting).
 const DEFAULT_PRICES: EnergyPrices = {
-  electricity: 0.16, // EUR/kWh zakelijk MKB kleinverbruik, indicatief en ex btw.
-  gas: 0.55, // EUR/m3 zakelijk MKB kleinverbruik, indicatief en ex btw.
-  feedInTariff: 0.07,
+  electricity: 0.18, // EUR/kWh zakelijk MKB kleinverbruik, indicatief en ex btw.
+  gas: 0.85, // EUR/m3 zakelijk MKB kleinverbruik, indicatief en ex btw.
+  feedInTariff: 0.04,
   lastUpdated: null,
   isLive: false,
 };
@@ -66,17 +67,17 @@ async function fetchEnergyPrices(): Promise<EnergyPrices> {
 
     // Dit is geen offerte of volledig tarief. Netbeheer, belastingschijven en contractvoorwaarden verschillen per situatie.
     const zakelijkElec = avgElecSpot !== null
-      ?Math.max(avgElecSpot + 0.01 + 0.03, 0.08)
+      ?Math.max(avgElecSpot + 0.12, 0.14)
       : DEFAULT_PRICES.electricity;
 
     const zakelijkGas = avgGasSpot !== null
-      ?Math.max(avgGasSpot + 0.50 + 0.08, 0.35)
+      ?Math.max(avgGasSpot + 0.72, 0.65)
       : DEFAULT_PRICES.gas;
 
     return {
       electricity: Math.round(zakelijkElec * 1000) / 1000,
       gas: Math.round(zakelijkGas * 1000) / 1000,
-      feedInTariff: 0.07,
+      feedInTariff: DEFAULT_PRICES.feedInTariff,
       lastUpdated: new Date(),
       isLive: avgElecSpot !== null || avgGasSpot !== null,
     };
@@ -145,8 +146,8 @@ const businessRanges: Record<string, {
 
 // CO2 emissiefactoren (bron: RVO/CBS 2025)
 const CO2_FACTORS = {
-  electricity: 0.33, // kg CO2/kWh (NL grid mix 2025, meer wind/zon)
-  gas: 1.8, // kg CO2/m³ (standaard emissiefactor aardgas)
+  electricity: 0.30, // kg CO2/kWh (NL grid mix 2025, meer wind/zon)
+  gas: 1.79, // kg CO2/m³ (standaard emissiefactor aardgas)
 };
 
 // Sector-specifieke energieprofielen (% van totaal elektriciteitsverbruik)
@@ -166,53 +167,106 @@ const SECTOR_PROFILES: Record<string, {
   other: { lighting: 0.25, cooling: 0.20, heating: 0.25, equipment: 0.30, peakLoadFactor: 0.5 },
 };
 
+const SPACE_HEATING_FRACTION: Record<string, number> = {
+  retail: 0.70,
+  office: 0.82,
+  warehouse: 0.75,
+  production: 0.30,
+  hospitality: 0.42,
+  healthcare: 0.62,
+  other: 0.65,
+};
+
+const MAX_SPACE_HEATING_GAS_PER_M2: Record<string, number> = {
+  retail: 24,
+  office: 22,
+  warehouse: 18,
+  production: 12,
+  hospitality: 24,
+  healthcare: 30,
+  other: 24,
+};
+
+const EMS_SAVINGS_RATE: Record<string, number> = {
+  retail: 0.04,
+  office: 0.035,
+  warehouse: 0.05,
+  production: 0.06,
+  hospitality: 0.04,
+  healthcare: 0.035,
+  other: 0.04,
+};
+
 // Besparingsmaatregelen met realistische percentages en kosten
 const SAVINGS_MEASURES = {
   led: {
     name: 'LED-verlichting',
-    savingsPercent: 0.55, // 55% besparing op verlichting (TL → LED retrofit)
+    savingsPercent: 0.50, // 55% besparing op verlichting (TL → LED retrofit)
     investmentPerM2: 10, // €/m² (retrofit, hergebruik armaturen)
     lifespan: 15,
   },
   solar: {
     name: 'Zonnepanelen',
-    kWhPerKwp: 875, // kWh opbrengst per kWp per jaar in NL (rekening houdend met degradatie)
-    costPerKwp: 1100, // € per kWp geïnstalleerd (zakelijk, inc montage)
-    roofFactorPerM2: 0.12, // kWp per m² dakoppervlak (≈ 50% van vloer bruikbaar, niet elk dak geschikt)
+    kWhPerKwp: 860, // kWh opbrengst per kWp per jaar in NL (rekening houdend met degradatie)
+    costPerKwp: 1050, // € per kWp geïnstalleerd (zakelijk, inc montage)
+    roofFactorPerM2: 0.115, // kWp per m² dakoppervlak (≈ 50% van vloer bruikbaar, niet elk dak geschikt)
     lifespan: 25,
   },
   heatpump: {
-    name: 'Warmtepomp',
-    cop: 3.5,
-    gasSavingsPercent: 0.80,
-    electricityIncrease: 0.25,
-    baseCost: 18000,
-    costPerM2: 35,
-    maxInvestment: 120000, // Cap: grotere panden hebben complexere maar niet lineair duurdere systemen
-    maxBuildingSize: 3000, // Boven 3000m² is een enkele warmtepomp niet realistisch
+    name: 'Warmtepomp of hybride oplossing',
+    cop: 3.1,
+    gasSavingsPercent: 0.62,
+    boilerEfficiency: 0.9,
+    baseCost: 26000,
+    costPerM2: 48,
+    maxInvestment: 180000, // Cap: grotere panden hebben complexere maar niet lineair duurdere systemen
+    maxBuildingSize: 5000, // Boven 3000m² is een enkele warmtepomp niet realistisch
     lifespan: 20,
   },
   ems: {
     name: 'Energiemanagementsysteem',
-    savingsPercent: 0.08,
-    baseCost: 4000,
-    costPerM2: 6,
+    baseCost: 5000,
+    costPerM2: 5,
     maxInvestment: 40000, // Cap voor EMS
     lifespan: 10,
   },
   smartThermostat: {
     name: 'Slimme klimaatregeling',
-    heatingSavingsPercent: 0.10,
-    baseCost: 600,
-    costPerM2: 2, // Schaalt mee met gebouwgrootte (meer zones = meer thermostaten)
-    maxInvestment: 5000,
+    heatingSavingsPercent: 0.08,
+    baseCost: 900,
+    costPerM2: 2.5, // Schaalt mee met gebouwgrootte (meer zones = meer thermostaten)
+    maxInvestment: 7000,
     lifespan: 10,
   },
   dynamicContract: {
-    name: 'Dynamisch energiecontract',
-    savingsPercent: 0.10, // 10% basis, afhankelijk van flexibiliteit
+    name: 'Contractoptimalisatie en vraagsturing',
+    savingsPercent: 0.035, // 10% basis, afhankelijk van flexibiliteit
   },
 };
+
+function getSpaceHeatingGasM3(businessType: string, buildingSize: number, remainingGasM3: number) {
+  const fraction = SPACE_HEATING_FRACTION[businessType] ?? SPACE_HEATING_FRACTION.other;
+  const maxPerM2 = MAX_SPACE_HEATING_GAS_PER_M2[businessType] ?? MAX_SPACE_HEATING_GAS_PER_M2.other;
+  return Math.max(0, Math.min(remainingGasM3 * fraction, buildingSize * maxPerM2));
+}
+
+function getSolarSelfConsumptionRate(businessType: string, solarProduction: number, annualDemand: number) {
+  const baseRates: Record<string, number> = {
+    retail: 0.62,
+    office: 0.68,
+    warehouse: 0.70,
+    production: 0.76,
+    hospitality: 0.66,
+    healthcare: 0.78,
+    other: 0.66,
+  };
+  const base = baseRates[businessType] ?? baseRates.other;
+  const generationShare = annualDemand > 0 ? solarProduction / annualDemand : 1;
+
+  if (generationShare <= 0.35) return Math.min(0.90, base + 0.14);
+  if (generationShare <= 0.70) return base;
+  return Math.max(0.45, base - 0.12);
+}
 
 interface Recommendation {
   name: string;
@@ -221,6 +275,7 @@ interface Recommendation {
   paybackYears: number;
   co2Reduction: number;
   priority: 'high' | 'medium' | 'low';
+  countsInTotals?: boolean;
 }
 
 interface CalculationResult {
@@ -322,9 +377,9 @@ export function CalculatorSection() {
         quickSelect: 'Quick select:',
         contractTitle: 'Your energy contract',
         contractIntro: 'Select your current contract type',
-        recommended: 'Recommended',
-        dynamicNote: 'Dynamic rates can create extra savings when usage can be shifted.',
-        dynamicNoteStrong: 'The calculation remains conservative.',
+        recommended: 'Attention point',
+        dynamicNote: 'Dynamic rates can be useful when usage can really be shifted.',
+        dynamicNoteStrong: 'We show this as an opportunity, not as guaranteed saving.',
         prioritiesTitle: 'What matters to you?',
         prioritiesIntro: 'We rank the recommendations based on your choice',
         prioritiesNote: 'The order of recommendations is aligned with your priorities',
@@ -390,9 +445,9 @@ export function CalculatorSection() {
         quickSelect: 'Snelle selectie:',
         contractTitle: 'Uw energiecontract',
         contractIntro: 'Selecteer uw huidige contractvorm',
-        recommended: 'Aanbevolen',
-        dynamicNote: 'Dynamische tarieven kunnen extra besparing opleveren als verbruik flexibel is.',
-        dynamicNoteStrong: 'De berekening blijft bewust conservatief.',
+        recommended: 'Aandachtspunt',
+        dynamicNote: 'Dynamische tarieven kunnen interessant zijn als verbruik echt te sturen is.',
+        dynamicNoteStrong: 'We tonen dit als kans, niet als gegarandeerde besparing.',
         prioritiesTitle: 'Wat is belangrijk voor u?',
         prioritiesIntro: 'We rangschikken de aanbevelingen op basis van uw keuze',
         prioritiesNote: 'De volgorde van aanbevelingen wordt afgestemd op uw prioriteiten',
@@ -513,10 +568,9 @@ export function CalculatorSection() {
     // 2. Warmtepomp (vóór solar, want voegt elektra-vraag toe)
     let heatpumpAdded = false;
     if (!hasInstallation('heatpump') && formData.gasUsage > 2000 && formData.buildingSize <= SAVINGS_MEASURES.heatpump.maxBuildingSize) {
-      const heatingFraction = formData.businessType === 'production' ?0.40 : 0.85;
-      const gasForHeating = remainingGasM3 * heatingFraction;
+      const gasForHeating = getSpaceHeatingGasM3(formData.businessType, formData.buildingSize, remainingGasM3);
       const gasSavings = gasForHeating * SAVINGS_MEASURES.heatpump.gasSavingsPercent;
-      const extraElectricity = (gasSavings * 9.77) / SAVINGS_MEASURES.heatpump.cop;
+      const extraElectricity = (gasSavings * 9.77 * SAVINGS_MEASURES.heatpump.boilerEfficiency) / SAVINGS_MEASURES.heatpump.cop;
 
       const yearlySavings = (gasSavings * energyPrices.gas) - (extraElectricity * energyPrices.electricity);
       const rawInvestment = SAVINGS_MEASURES.heatpump.baseCost + (formData.buildingSize * SAVINGS_MEASURES.heatpump.costPerM2);
@@ -526,7 +580,7 @@ export function CalculatorSection() {
 
       if (yearlySavings > 300 && payback <= SAVINGS_MEASURES.heatpump.lifespan) {
         recommendations.push({
-          name: 'Warmtepomp',
+          name: 'Warmtepomp of hybride oplossing',
           yearlySavings: Math.round(yearlySavings),
           investment: Math.round(investment),
           paybackYears: Math.round(payback * 10) / 10,
@@ -541,12 +595,12 @@ export function CalculatorSection() {
 
     // 3. Slimme klimaatregeling (alleen als geen warmtepomp)
     if (formData.gasUsage > 1000 && !hasInstallation('heatpump') && !heatpumpAdded) {
-      const heatingFraction = formData.businessType === 'production' ?0.40 : 0.85;
-      const heatingCosts = remainingGasM3 * energyPrices.gas * heatingFraction;
+      const gasForHeating = getSpaceHeatingGasM3(formData.businessType, formData.buildingSize, remainingGasM3);
+      const heatingCosts = gasForHeating * energyPrices.gas;
       const yearlySavings = heatingCosts * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
       const rawInvestment = SAVINGS_MEASURES.smartThermostat.baseCost + (formData.buildingSize * SAVINGS_MEASURES.smartThermostat.costPerM2);
       const investment = Math.min(rawInvestment, SAVINGS_MEASURES.smartThermostat.maxInvestment);
-      const gasSavingsM3 = remainingGasM3 * heatingFraction * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
+      const gasSavingsM3 = gasForHeating * SAVINGS_MEASURES.smartThermostat.heatingSavingsPercent;
       const co2Reduction = (gasSavingsM3 * CO2_FACTORS.gas) / 1000;
 
       if (yearlySavings > 100) {
@@ -568,22 +622,17 @@ export function CalculatorSection() {
         retail: 0.6, office: 0.3, warehouse: 0.7, production: 0.6,
         hospitality: 0.4, healthcare: 0.25, other: 0.5,
       };
-      // Sector-specifiek eigen verbruik (retail/kantoor laag door weekenden/avonden)
-      const selfConsumptionRate: Record<string, number> = {
-        retail: 0.55, office: 0.50, warehouse: 0.65, production: 0.75,
-        hospitality: 0.60, healthcare: 0.80, other: 0.65,
-      };
-
       const roofArea = formData.buildingSize * (roofFraction[formData.businessType] || 0.5);
       const possibleKwp = roofArea * SAVINGS_MEASURES.solar.roofFactorPerM2;
       const maxKwp = Math.min(possibleKwp, remainingElecKwh / SAVINGS_MEASURES.solar.kWhPerKwp);
       const solarProduction = maxKwp * SAVINGS_MEASURES.solar.kWhPerKwp;
 
-      const eigenVerbruikRatio = selfConsumptionRate[formData.businessType] || 0.65;
+      const eigenVerbruikRatio = getSolarSelfConsumptionRate(formData.businessType, solarProduction, remainingElecKwh);
       const eigenVerbruik = solarProduction * eigenVerbruikRatio;
       const teruglevering = solarProduction * (1 - eigenVerbruikRatio);
+      const exportValueFactor = teruglevering > solarProduction * 0.30 ? 0.85 : 1;
 
-      const yearlySavings = eigenVerbruik * energyPrices.electricity + teruglevering * energyPrices.feedInTariff;
+      const yearlySavings = eigenVerbruik * energyPrices.electricity + teruglevering * energyPrices.feedInTariff * exportValueFactor;
       const investment = maxKwp * SAVINGS_MEASURES.solar.costPerKwp;
       const co2Reduction = solarProduction * CO2_FACTORS.electricity / 1000;
 
@@ -606,34 +655,40 @@ export function CalculatorSection() {
     const remainingTotalCost = remainingElecCost + remainingGasCost;
 
     if (!hasInstallation('ems') && remainingTotalCost > 10000) {
-      const yearlySavings = remainingTotalCost * SAVINGS_MEASURES.ems.savingsPercent;
+      const emsRate = EMS_SAVINGS_RATE[formData.businessType] ?? EMS_SAVINGS_RATE.other;
+      const controllableGasCost = remainingGasCost * 0.35;
+      const yearlySavings = remainingElecCost * emsRate + controllableGasCost * emsRate;
       const rawInvestment = SAVINGS_MEASURES.ems.baseCost + (formData.buildingSize * SAVINGS_MEASURES.ems.costPerM2);
       const investment = Math.min(rawInvestment, SAVINGS_MEASURES.ems.maxInvestment);
       const remainingCO2 = (remainingElecKwh * CO2_FACTORS.electricity + remainingGasM3 * CO2_FACTORS.gas) / 1000;
-      const co2Reduction = remainingCO2 * SAVINGS_MEASURES.ems.savingsPercent;
+      const co2Reduction = remainingCO2 * emsRate;
+      const payback = yearlySavings > 0 ? investment / yearlySavings : 99;
 
-      recommendations.push({
-        name: 'Energiemanagementsysteem (EMS)',
-        yearlySavings: Math.round(yearlySavings),
-        investment: Math.round(investment),
-        paybackYears: Math.round((investment / yearlySavings) * 10) / 10,
-        co2Reduction: Math.round(co2Reduction * 10) / 10,
-        priority: remainingTotalCost > 25000 ?'high' : 'medium',
-      });
+      if (yearlySavings > 500 && payback <= 12) {
+        recommendations.push({
+          name: 'Energiemanagementsysteem (EMS)',
+          yearlySavings: Math.round(yearlySavings),
+          investment: Math.round(investment),
+          paybackYears: Math.round(payback * 10) / 10,
+          co2Reduction: Math.round(co2Reduction * 10) / 10,
+          priority: remainingTotalCost > 25000 ?'high' : 'medium',
+        });
+      }
     }
 
     // 6. Dynamisch contract (op basis van resterende elektrakosten)
     if (formData.contractType !== 'dynamic') {
       const potentialSavings = remainingElecCost * SAVINGS_MEASURES.dynamicContract.savingsPercent * profile.peakLoadFactor;
 
-      if (potentialSavings > 100) {
+      if (potentialSavings > 150) {
         recommendations.push({
-          name: 'Overstappen naar dynamisch contract',
+          name: 'Contractoptimalisatie en vraagsturing',
           yearlySavings: Math.round(potentialSavings),
           investment: 0,
           paybackYears: 0,
           co2Reduction: 0,
-          priority: potentialSavings > 1000 ?'high' : 'medium',
+          priority: 'low',
+          countsInTotals: false,
         });
       }
     }
@@ -673,10 +728,11 @@ export function CalculatorSection() {
 
     // Bereken totalen (top 5 maatregelen)
     const topRecommendations = recommendations.slice(0, 5);
-    const totalYearlySavings = topRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
-    const totalInvestment = topRecommendations.reduce((sum, r) => sum + r.investment, 0);
-    const totalCO2Reduction = topRecommendations.reduce((sum, r) => sum + r.co2Reduction, 0);
-    const avgPayback = totalInvestment > 0 ?totalInvestment / totalYearlySavings : 0;
+    const totalRecommendations = topRecommendations.filter((r) => r.countsInTotals !== false);
+    const totalYearlySavings = totalRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
+    const totalInvestment = totalRecommendations.reduce((sum, r) => sum + r.investment, 0);
+    const totalCO2Reduction = totalRecommendations.reduce((sum, r) => sum + r.co2Reduction, 0);
+    const avgPayback = totalInvestment > 0 && totalYearlySavings > 0 ?totalInvestment / totalYearlySavings : 0;
 
     return {
       currentCosts,
@@ -733,7 +789,8 @@ export function CalculatorSection() {
       lines.push('Geen directe standaardmaatregelen gevonden op basis van de invoer.');
     } else {
       calculatedResults.recommendations.forEach((rec, index) => {
-        lines.push(`${index + 1}. ${rec.name}: EUR ${rec.yearlySavings.toLocaleString()}/jaar besparing, investering EUR ${rec.investment.toLocaleString()}, terugverdientijd ${rec.paybackYears} jaar`);
+        const scopeNote = rec.countsInTotals === false ? ', kans apart beoordeeld en niet meegeteld in de hoofdtotalen' : '';
+        lines.push(`${index + 1}. ${rec.name}: EUR ${rec.yearlySavings.toLocaleString()}/jaar potentie, investering EUR ${rec.investment.toLocaleString()}, terugverdientijd ${rec.paybackYears} jaar${scopeNote}`);
       });
     }
 
@@ -753,7 +810,7 @@ export function CalculatorSection() {
     setCalculatorInsight(null);
 
     try {
-      const response = await fetch('/api/calculator-insights', {
+      const response = await fetch(resolveCalculatorInsightEndpoint(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -819,7 +876,7 @@ export function CalculatorSection() {
     setSubmitStatus('idle');
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch(resolveContactEndpoint(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -852,6 +909,7 @@ export function CalculatorSection() {
               yearlySavings: `EUR ${rec.yearlySavings.toLocaleString()}/jaar`,
               investment: `EUR ${rec.investment.toLocaleString()}`,
               paybackYears: `${rec.paybackYears} jaar`,
+              countsInTotals: rec.countsInTotals !== false,
             })),
             insight,
             summary: buildMailSummary(calculatedResults, insight),
@@ -1499,7 +1557,7 @@ export function CalculatorSection() {
                           {[
                             { value: 'variable', label: 'Variabel tarief', desc: 'Prijs varieert met de marktomstandigheden', icon: TrendingDown, color: '#f97316' },
                             { value: 'fixed', label: 'Vast tarief', desc: 'Vaste prijs gedurende de contractperiode', icon: Euro, color: '#3b82f6' },
-                            { value: 'dynamic', label: 'Dynamisch tarief', desc: 'Realtime uurprijzen - optimaal voor slim verbruik', icon: Zap, color: '#10b981', recommended: true },
+                            { value: 'dynamic', label: 'Dynamisch tarief', desc: 'Realtime uurprijzen voor stuurbaar verbruik', icon: Zap, color: '#10b981' },
                           ].map((option) => {
                             const isSelected = formData.contractType === option.value;
                             const Icon = option.icon;
@@ -1517,19 +1575,6 @@ export function CalculatorSection() {
                                   backgroundColor: isSelected ?`${option.color}08` : undefined,
                                 }}
                               >
-                                {/* Recommended badge */}
-                                {option.recommended && (
-                                  <div
-                                    className="absolute -top-2.5 right-4 px-3 py-1 rounded-full text-xs font-bold text-white"
-                                    style={{ backgroundColor: option.color }}
-                                  >
-                                    <span className="flex items-center gap-1">
-                                      <Sparkles className="w-3 h-3" />
-                                      {t.recommended}
-                                    </span>
-                                  </div>
-                                )}
-
                                 <div className="flex items-center gap-4">
                                   {/* Radio button */}
                                   <div

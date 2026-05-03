@@ -309,7 +309,7 @@ function buildVisitorReportEmail(payload) {
         .map(
           (rec) => `
             <tr>
-              <td style="padding:13px 16px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:800;">${escapeHtml(rec.name)}</td>
+              <td style="padding:13px 16px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:800;">${escapeHtml(rec.name)}${rec.countsInTotals === false ? '<div style="margin-top:4px;color:#64748b;font-size:12px;font-weight:600;">Kans apart beoordeeld, niet meegeteld in de hoofdtotalen</div>' : ''}</td>
               <td style="padding:13px 16px;border-bottom:1px solid #e2e8f0;color:#047857;font-weight:800;text-align:right;">${escapeHtml(rec.yearlySavings)}</td>
             </tr>`
         )

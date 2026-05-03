@@ -23,3 +23,7 @@ export function resolveChatEndpoint() {
 export function resolveContactEndpoint() {
   return resolveApiEndpoint('/api/contact', import.meta.env.VITE_BESPAARCHECK_CONTACT_ENDPOINT);
 }
+
+export function resolveCalculatorInsightEndpoint() {
+  return resolveApiEndpoint('/api/calculator-insights', import.meta.env.VITE_BESPAARCHECK_CALCULATOR_INSIGHT_ENDPOINT);
+}
