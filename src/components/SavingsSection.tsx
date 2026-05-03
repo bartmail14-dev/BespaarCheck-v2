@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Thermometer, Sun, FileText, Battery, Plug, Zap, ArrowRight, X, ExternalLink, CheckCircle, Sparkles, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 const opportunities = [
   {
@@ -286,6 +287,7 @@ const opportunitiesEn: typeof opportunities = [
 
 export function SavingsSection() {
   const { isEnglish } = useLanguage();
+  const { isDark } = useTheme();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<typeof opportunities[0] | null>(null);
   const [isModalClosing, setIsModalClosing] = useState(false);
@@ -393,7 +395,7 @@ export function SavingsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="mb-12 grid gap-8 lg:mb-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/75 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur dark:border-sky-300/20 dark:bg-white/8 dark:text-sky-100">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/75 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur dark:border-sky-300/20 dark:bg-white/[0.08] dark:text-sky-100">
               <Zap className="w-4 h-4" />
               {text.chip}
             </div>
@@ -408,7 +410,7 @@ export function SavingsSection() {
               <span className="hidden xl:inline">{text.title}</span>
             </h2>
           </div>
-          <div className="rounded-lg border border-white/70 bg-white/74 p-5 shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-white/8 dark:shadow-black/30 sm:p-6">
+          <div className="rounded-lg border border-white/70 bg-white/[0.74] p-5 shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.08] dark:shadow-black/30 sm:p-6">
             <p className="text-base leading-8 text-slate-600 dark:text-slate-200 sm:text-lg">
               {text.intro}
             </p>
@@ -426,7 +428,7 @@ export function SavingsSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 lg:gap-5 mb-14">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3 lg:gap-5 mb-14">
           {items.map((item) => {
             const Icon = item.icon;
             const isExpanded = expandedId === item.id;
@@ -434,9 +436,9 @@ export function SavingsSection() {
             return (
               <article
                 key={item.id}
-                className={`group relative overflow-hidden rounded-lg border bg-white/82 p-5 shadow-lg shadow-slate-900/6 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 dark:bg-white/7 dark:shadow-black/25 ${
+                className={`group relative overflow-hidden rounded-lg border bg-white/[0.82] p-5 shadow-lg shadow-slate-900/[0.06] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 dark:bg-white/[0.07] dark:shadow-black/25 ${
                   isExpanded
-                    ? 'border-slate-200 shadow-2xl shadow-slate-900/12 dark:border-white/18 dark:shadow-black/40'
+                    ? 'border-slate-200 shadow-2xl shadow-slate-900/[0.12] dark:border-white/[0.18] dark:shadow-black/40'
                     : 'border-white/80 dark:border-white/10'
                 }`}
                 style={{
@@ -469,7 +471,11 @@ export function SavingsSection() {
                   </div>
                   <button
                     onClick={() => setExpandedId(isExpanded ?null : item.id)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/8 dark:text-slate-300 dark:hover:bg-white/14"
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-sm transition-all hover:-translate-y-0.5 ${
+                      isExpanded
+                        ? 'border-slate-300 bg-slate-950 text-white shadow-slate-900/20 dark:border-sky-300/40 dark:bg-sky-500/20 dark:text-sky-50 dark:shadow-sky-950/30'
+                        : 'border-slate-200 bg-white/90 text-slate-500 hover:border-slate-300 hover:bg-white dark:border-sky-300/20 dark:bg-slate-950/70 dark:text-sky-100 dark:hover:border-sky-300/40 dark:hover:bg-sky-500/15'
+                    }`}
                     aria-label={`${isExpanded ? text.close : text.open} ${item.title}`}
                     aria-expanded={isExpanded}
                     aria-controls={`savings-details-${item.id}`}
@@ -498,7 +504,7 @@ export function SavingsSection() {
                   }`}
                 >
                   <div
-                    className="relative overflow-hidden rounded-lg border bg-white/92 shadow-inner dark:bg-slate-950/60"
+                    className="relative overflow-hidden rounded-lg border bg-white/[0.92] shadow-inner dark:bg-slate-950/60"
                     style={{
                       borderColor: `${item.color}30`,
                     }}
@@ -537,7 +543,7 @@ export function SavingsSection() {
                           {item.extendedInfo.benefits.slice(0, 3).map((benefit, index) => (
                             <div
                               key={benefit}
-                              className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm leading-5 text-slate-700 dark:border-white/8 dark:bg-white/6 dark:text-slate-200"
+                              className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm leading-5 text-slate-700 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-slate-200"
                               style={{
                                 animation: `fadeSlideIn 0.28s ease-out ${index * 0.05}s both`,
                               }}
@@ -561,11 +567,17 @@ export function SavingsSection() {
                         </div>
                         <button
                           onClick={() => openModal(item)}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
                           aria-label={`${text.more} ${item.title}`}
                           style={{
-                            backgroundColor: item.color,
-                            boxShadow: `0 12px 24px ${item.color}22`,
+                            backgroundColor: isDark ? undefined : item.color,
+                            backgroundImage: isDark
+                              ? `linear-gradient(135deg, ${item.color}cc 0%, #2563eb 100%)`
+                              : undefined,
+                            borderColor: isDark ? `${item.color}66` : `${item.color}`,
+                            boxShadow: isDark
+                              ? `0 12px 28px rgba(2, 6, 23, 0.42), 0 0 0 1px ${item.color}22`
+                              : `0 12px 24px ${item.color}22`,
                           }}
                         >
                           {text.more}
@@ -761,8 +773,17 @@ export function SavingsSection() {
               <a
                 href="#calculator"
                 onClick={closeModal}
-                className="flex items-center justify-center gap-2 w-full rounded-lg py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.01] hover:shadow-lg sm:text-base"
-                style={{ backgroundColor: modalItem.color }}
+                className="flex items-center justify-center gap-2 w-full rounded-lg border py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.01] hover:shadow-lg sm:text-base"
+                style={{
+                  backgroundColor: isDark ? undefined : modalItem.color,
+                  backgroundImage: isDark
+                    ? `linear-gradient(135deg, ${modalItem.color}cc 0%, #2563eb 100%)`
+                    : undefined,
+                  borderColor: isDark ? `${modalItem.color}66` : `${modalItem.color}`,
+                  boxShadow: isDark
+                    ? `0 12px 30px rgba(2, 6, 23, 0.46), 0 0 0 1px ${modalItem.color}22`
+                    : `0 12px 24px ${modalItem.color}22`,
+                }}
               >
                 {text.modalCta} {modalItem.title}
                 <ArrowRight className="w-5 h-5" />
