@@ -7,6 +7,7 @@ import {
   getBespaarcheckSystemPrompt,
 } from '../lib/bespaarcheckKnowledge';
 import type { ChatLanguage, ChatMessage } from '../lib/bespaarcheckKnowledge';
+import { resolveChatEndpoint, resolveContactEndpoint } from '../lib/apiEndpoints';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -136,11 +137,6 @@ function ChatFavicon({
       aria-hidden="true"
     />
   );
-}
-
-function resolveChatEndpoint() {
-  const configured = import.meta.env.VITE_BESPAARCHECK_CHAT_ENDPOINT?.trim();
-  return configured || '/api/chat';
 }
 
 async function askLlmEndpoint(messages: ChatMessage[], question: string, language: ChatLanguage) {
@@ -282,7 +278,7 @@ export function BespaarChatbot() {
     setLeadStatus('sending');
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch(resolveContactEndpoint(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
