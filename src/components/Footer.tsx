@@ -13,6 +13,7 @@ export function Footer() {
         contactText: 'Send an e-mail. We keep it practical, clear and without obligations.',
         navLabel: 'Footer navigation',
         copyright: 'Indicative and non-binding.',
+        credit: 'Website by',
         links: [
           { label: 'Saving options', href: '#savings' },
           { label: 'Rules and regulations', href: '#regelgeving' },
@@ -30,6 +31,7 @@ export function Footer() {
         contactText: 'Stuur een e-mail. We houden het praktisch, helder en zonder verplichtingen.',
         navLabel: 'Footer navigatie',
         copyright: 'Indicatief en vrijblijvend.',
+        credit: 'Website door',
         links: [
           { label: 'Bespaarmogelijkheden', href: '#savings' },
           { label: 'Wet- en regelgeving', href: '#regelgeving' },
@@ -93,9 +95,22 @@ export function Footer() {
             ))}
           </nav>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} BespaarCheck. {text.copyright}
-          </p>
+          <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 md:text-right">
+            <p>
+              &copy; {new Date().getFullYear()} BespaarCheck. {text.copyright}
+            </p>
+            <p className="flex flex-wrap items-center gap-2 md:justify-end">
+              {text.credit}{' '}
+              <a
+                href="https://bluewiremedia.nl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50/80 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-100 dark:border-sky-300/20 dark:bg-sky-400/10 dark:text-sky-100 dark:hover:border-sky-300/35 dark:hover:bg-sky-400/15"
+              >
+                Blue Wire Media
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
