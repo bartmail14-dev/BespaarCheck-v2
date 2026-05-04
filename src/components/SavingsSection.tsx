@@ -295,8 +295,7 @@ export function SavingsSection() {
   const text = isEnglish
     ? {
         chip: 'Options',
-        title: 'Energy-saving options',
-        compactTitle: 'Energy-saving options',
+        title: 'Energy savings for your business',
         intro: 'Discover which combinations make sense for your business. From quick optimisations to larger steps toward smart energy.',
         more: 'More information',
         cta: 'Calculate your saving',
@@ -314,8 +313,7 @@ export function SavingsSection() {
       }
     : {
         chip: 'Mogelijkheden',
-        title: 'Energiebesparingsmogelijkheden',
-        compactTitle: 'Energie besparen voor uw bedrijf',
+        title: 'Energie besparen voor uw bedrijf',
         intro: 'Ontdek welke combinaties voor uw bedrijf logisch zijn. Van snelle optimalisaties tot grotere stappen richting slimme energie.',
         more: 'Meer informatie',
         cta: 'Bereken uw besparing',
@@ -400,14 +398,13 @@ export function SavingsSection() {
               {text.chip}
             </div>
             <h2
-              className="material-title overflow-wrap-anywhere mt-5 max-w-3xl font-bold text-slate-950 dark:text-white"
+              className="material-title mt-5 max-w-3xl text-balance font-bold text-slate-950 dark:text-white"
               style={{
-                fontSize: 'clamp(2rem, 8vw, 3.4rem)',
+                fontSize: 'clamp(2rem, 5.6vw, 3.25rem)',
                 lineHeight: 1.08,
               }}
             >
-              <span className="xl:hidden">{text.compactTitle}</span>
-              <span className="hidden xl:inline">{text.title}</span>
+              {text.title}
             </h2>
           </div>
           <div className="rounded-lg border border-white/70 bg-white/[0.74] p-5 shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.08] dark:shadow-black/30 sm:p-6">

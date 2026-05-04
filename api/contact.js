@@ -2,6 +2,8 @@ const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const MAX_REQUEST_BYTES = 32_000;
+const DEFAULT_CONTACT_TO_EMAIL = 'ict@comcamenergy.com';
+const DEFAULT_CHATBOT_TO_EMAIL = 'info@bespaarcheck.net';
 const ALLOWED_ORIGINS = new Set([
   'https://bespaarcheck.net',
   'https://www.bespaarcheck.net',
@@ -436,11 +438,23 @@ function buildVisitorReportEmail(payload) {
   };
 }
 
-async function sendPostmarkEmail(email, toOverride) {
+function resolveInternalRecipient(source, toOverride) {
+  if (toOverride) return toOverride;
+
+  if (source === 'chatbot') {
+    return process.env.CHATBOT_TO_EMAIL || DEFAULT_CHATBOT_TO_EMAIL;
+  }
+
+  return process.env.CONTACT_TO_EMAIL || DEFAULT_CONTACT_TO_EMAIL;
+}
+
+async function sendPostmarkEmail(email, options = {}) {
   const token = process.env.POSTMARK_SERVER_TOKEN;
   if (!token) {
     return { status: 503, error: 'POSTMARK_SERVER_TOKEN is not configured' };
   }
+
+  const to = resolveInternalRecipient(options.source, options.to);
 
   const response = await fetch('https://api.postmarkapp.com/email', {
     method: 'POST',
@@ -451,7 +465,7 @@ async function sendPostmarkEmail(email, toOverride) {
     },
     body: JSON.stringify({
       From: process.env.POSTMARK_FROM_EMAIL || 'info@bespaarcheck.net',
-      To: toOverride || process.env.CONTACT_TO_EMAIL || 'ict@comcamenergy.com',
+      To: to,
       Subject: email.subject,
       HtmlBody: email.htmlBody,
       TextBody: email.textBody,
@@ -496,23 +510,24 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  const email = buildEmail(req.body || {});
+  const payload = req.body || {};
+  const email = buildEmail(payload);
   if (email.error) {
     return res.status(400).json({ error: email.error });
   }
 
-  const result = await sendPostmarkEmail(email);
+  const result = await sendPostmarkEmail(email, { source: payload.source });
   if (result.error) {
     return res.status(result.status || 502).json({ error: result.error });
   }
 
-  if ((req.body || {}).source === 'calculator') {
-    const visitorEmail = buildVisitorReportEmail(req.body || {});
+  if (payload.source === 'calculator') {
+    const visitorEmail = buildVisitorReportEmail(payload);
     if (visitorEmail.error) {
       return res.status(400).json({ error: visitorEmail.error });
     }
 
-    const visitorResult = await sendPostmarkEmail(visitorEmail, visitorEmail.to);
+    const visitorResult = await sendPostmarkEmail(visitorEmail, { to: visitorEmail.to });
     if (visitorResult.error) {
       return res.status(visitorResult.status || 502).json({ error: visitorResult.error });
     }
