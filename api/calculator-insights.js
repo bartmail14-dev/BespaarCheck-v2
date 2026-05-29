@@ -125,8 +125,8 @@ function buildPrompt(body) {
   const language = body.language === 'en' ? 'en' : 'nl';
   const instruction =
     language === 'en'
-      ? 'Write in English. Use sentence case. Do not use em dashes. Be clear, calm and lightly optimistic. Emphasise that BespaarCheck is non-binding and the visitor is not committed to anything.'
-      : 'Schrijf in het Nederlands. Gebruik sentence case. Gebruik geen gedachtenstreepjes. Wees helder, rustig en licht positief. Benadruk dat BespaarCheck vrijblijvend is en dat de bezoeker nergens aan vast zit.';
+      ? 'Write EVERY field of the JSON in English, including summary, nextSteps, attentionPoints, sanityLevel, sanitySummary, sanityChecks and confidenceNote. Do not mix in any Dutch. Use sentence case. Do not use em dashes. Be clear, calm and lightly optimistic. Emphasise that BespaarCheck is non-binding and the visitor is not committed to anything.'
+      : 'Schrijf ELK veld van de JSON volledig in het Nederlands, inclusief summary, nextSteps, attentionPoints, sanityLevel, sanitySummary, sanityChecks en confidenceNote. Gebruik geen Engels. Gebruik sentence case. Gebruik geen gedachtenstreepjes. Wees helder, rustig en licht positief. Benadruk dat BespaarCheck vrijblijvend is en dat de bezoeker nergens aan vast zit.';
 
   return `
 ${instruction}

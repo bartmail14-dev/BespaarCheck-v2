@@ -2,8 +2,8 @@ const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const MAX_REQUEST_BYTES = 32_000;
-const DEFAULT_CONTACT_TO_EMAIL = 'ict@comcamenergy.com';
-const DEFAULT_CHATBOT_TO_EMAIL = 'info@bespaarcheck.net';
+const DEFAULT_CONTACT_TO_EMAIL = 'info@bespaarcheck.net,jvl@bespaarcheck.net,bv@bespaarcheck.net';
+const DEFAULT_CHATBOT_TO_EMAIL = 'info@bespaarcheck.net,jvl@bespaarcheck.net,bv@bespaarcheck.net';
 const ALLOWED_ORIGINS = new Set([
   'https://bespaarcheck.net',
   'https://www.bespaarcheck.net',
@@ -403,9 +403,14 @@ function buildVisitorReportEmail(payload) {
                 ${sanityHtml}
                 <tr>
                   <td class="content-pad" style="padding:24px 30px 30px;">
-                    <div style="padding:18px 20px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:14px;line-height:1.7;">
-                      <strong style="display:block;color:#0f172a;margin-bottom:4px;">Volledig vrijblijvend</strong>
-                      Dit rapport is indicatief. Er wordt niets automatisch gestart, er is geen overeenkomst en u zit nergens aan vast.
+                    <div style="padding:18px 20px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;font-size:13px;line-height:1.7;">
+                      <strong style="display:block;color:#9a3412;margin-bottom:8px;font-size:14px;">Belangrijk: lees de disclaimer</strong>
+                      <ul style="margin:0;padding-left:18px;">
+                        <li>Dit rapport is een <strong>indicatieve schatting</strong>. De werkelijke besparingen, investeringen en terugverdientijden kunnen afwijken en zijn afhankelijk van uw specifieke situatie.</li>
+                        <li>De berekening is gebaseerd op de door u opgegeven gegevens en op <strong>indicatieve marktprijzen</strong>. Aan de uitkomsten kunnen <strong>geen rechten worden ontleend</strong>.</li>
+                        <li>Dit rapport is <strong>geen financieel, juridisch of fiscaal advies</strong> en geen offerte.</li>
+                        <li>De BespaarCheck is volledig <strong>vrijblijvend</strong>. Er wordt niets automatisch gestart, er ontstaat geen overeenkomst en u zit nergens aan vast.</li>
+                      </ul>
                     </div>
                     <p style="margin:18px 0 0;text-align:center;font-size:12px;color:#94a3b8;">bespaarcheck.net</p>
                   </td>
@@ -421,13 +426,17 @@ function buildVisitorReportEmail(payload) {
   const textBody = [
     'Uw indicatieve BespaarCheck rapport',
     '',
-    'Alles is vrijblijvend. U zit nergens aan vast.',
-    '',
     `Potentiele besparing: ${cleanText(report.yearlySavings)}`,
     `Terugverdientijd: ${cleanText(report.paybackPeriod)}`,
     `Investering: ${cleanText(report.totalInvestment)}`,
     '',
     cleanText(report.summary, 4000),
+    '',
+    'Belangrijk: lees de disclaimer',
+    '- Dit rapport is een indicatieve schatting. De werkelijke besparingen, investeringen en terugverdientijden kunnen afwijken en zijn afhankelijk van uw specifieke situatie.',
+    '- De berekening is gebaseerd op de door u opgegeven gegevens en op indicatieve marktprijzen. Aan de uitkomsten kunnen geen rechten worden ontleend.',
+    '- Dit rapport is geen financieel, juridisch of fiscaal advies en geen offerte.',
+    '- De BespaarCheck is volledig vrijblijvend. Er ontstaat geen overeenkomst en u zit nergens aan vast.',
   ].join('\n');
 
   return {

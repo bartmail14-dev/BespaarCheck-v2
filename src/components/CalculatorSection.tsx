@@ -201,26 +201,26 @@ const EMS_SAVINGS_RATE: Record<string, number> = {
 const SAVINGS_MEASURES = {
   led: {
     name: 'LED-verlichting',
-    savingsPercent: 0.50, // 55% besparing op verlichting (TL → LED retrofit)
-    investmentPerM2: 10, // €/m² (retrofit, hergebruik armaturen)
+    savingsPercent: 0.45, // 45% besparing op verlichting (conservatief voor gemengde TL → LED retrofit)
+    investmentPerM2: 18, // €/m² (zakelijke retrofit, marktconform; vaak €15-25/m²)
     lifespan: 15,
   },
   solar: {
     name: 'Zonnepanelen',
     kWhPerKwp: 860, // kWh opbrengst per kWp per jaar in NL (rekening houdend met degradatie)
-    costPerKwp: 1050, // € per kWp geïnstalleerd (zakelijk, inc montage)
+    costPerKwp: 1050, // € per kWp geïnstalleerd (zakelijk, inc montage) - referentie voor grote systemen
     roofFactorPerM2: 0.115, // kWp per m² dakoppervlak (≈ 50% van vloer bruikbaar, niet elk dak geschikt)
     lifespan: 25,
   },
   heatpump: {
     name: 'Warmtepomp of hybride oplossing',
     cop: 3.1,
-    gasSavingsPercent: 0.62,
+    gasSavingsPercent: 0.55, // Conservatief voor warmtepomp/hybride (vaak 50-60% op ruimteverwarmingsgas)
     boilerEfficiency: 0.9,
     baseCost: 26000,
     costPerM2: 48,
     maxInvestment: 180000, // Cap: grotere panden hebben complexere maar niet lineair duurdere systemen
-    maxBuildingSize: 5000, // Boven 3000m² is een enkele warmtepomp niet realistisch
+    maxBuildingSize: 3000, // Boven 3000m² is een enkele warmtepomp niet realistisch
     lifespan: 20,
   },
   ems: {
@@ -266,6 +266,14 @@ function getSolarSelfConsumptionRate(businessType: string, solarProduction: numb
   if (generationShare <= 0.35) return Math.min(0.90, base + 0.14);
   if (generationShare <= 0.70) return base;
   return Math.max(0.45, base - 0.12);
+}
+
+// Kleine zonne-installaties zijn duurder per kWp dan grote (vaste kosten, montage, aansluiting).
+function getSolarCostPerKwp(kwp: number) {
+  if (kwp < 15) return 1400;
+  if (kwp < 30) return 1300;
+  if (kwp < 100) return 1150;
+  return SAVINGS_MEASURES.solar.costPerKwp; // 1050 referentie voor grote systemen
 }
 
 interface Recommendation {
@@ -633,7 +641,7 @@ export function CalculatorSection() {
       const exportValueFactor = teruglevering > solarProduction * 0.30 ? 0.85 : 1;
 
       const yearlySavings = eigenVerbruik * energyPrices.electricity + teruglevering * energyPrices.feedInTariff * exportValueFactor;
-      const investment = maxKwp * SAVINGS_MEASURES.solar.costPerKwp;
+      const investment = maxKwp * getSolarCostPerKwp(maxKwp);
       const co2Reduction = solarProduction * CO2_FACTORS.electricity / 1000;
 
       if (maxKwp > 3 && yearlySavings > 200) {
@@ -728,7 +736,23 @@ export function CalculatorSection() {
 
     // Bereken totalen (top 5 maatregelen)
     const topRecommendations = recommendations.slice(0, 5);
-    const totalRecommendations = topRecommendations.filter((r) => r.countsInTotals !== false);
+    const mainRecommendations = topRecommendations.filter((r) => r.countsInTotals !== false);
+    const totalRecommendations = mainRecommendations.length > 0 ? mainRecommendations : topRecommendations;
+    const rawTotalYearlySavings = totalRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
+
+    // Realisme-plafond: de gecombineerde besparing kan in de praktijk niet meer dan een groot deel
+    // van de huidige energiekosten zijn. We cappen op 45% en schalen de maatregelen proportioneel terug
+    // zodat de getoonde bedragen en de terugverdientijden consistent blijven met het totaal.
+    const SAVINGS_CAP_RATE = 0.45;
+    const savingsCap = currentCosts.total * SAVINGS_CAP_RATE;
+    if (rawTotalYearlySavings > savingsCap && savingsCap > 0) {
+      const scale = savingsCap / rawTotalYearlySavings;
+      totalRecommendations.forEach((r) => {
+        r.yearlySavings = Math.round(r.yearlySavings * scale);
+        r.paybackYears = r.yearlySavings > 0 ? Math.round((r.investment / r.yearlySavings) * 10) / 10 : 0;
+      });
+    }
+
     const totalYearlySavings = totalRecommendations.reduce((sum, r) => sum + r.yearlySavings, 0);
     const totalInvestment = totalRecommendations.reduce((sum, r) => sum + r.investment, 0);
     const totalCO2Reduction = totalRecommendations.reduce((sum, r) => sum + r.co2Reduction, 0);
